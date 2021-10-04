@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
+import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
+import { ThemeProvider } from "styled-components/macro";
 import Home from "./views/Home";
+import PokeDex from "./views/PokeDex";
 import SnackBar from "my-react-snackbar";
+import PageLayout from "./components/Layout";
+import theme from "./theme";
 import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 
 function App() {
@@ -8,6 +13,7 @@ function App() {
   const [registration, setRegistration] = useState<ServiceWorkerRegistration>();
 
   const onSuccess = useCallback(() => {}, []);
+
   const onUpdate = useCallback((registration: ServiceWorkerRegistration) => {
     if (!!registration && !!registration.waiting) {
       setShowSnackbar(true);
@@ -30,10 +36,10 @@ function App() {
       onSuccess,
       onUpdate,
     });
-  }, []);
+  }, [onUpdate, onSuccess]);
 
   return (
-    <>
+    <ThemeProvider theme={theme}>
       <SnackBar
         open={showSnackBar}
         closeOnClick={false}
@@ -43,8 +49,22 @@ function App() {
         yesLabel="Update"
         onYes={handleOnUpdate}
       />
-      <Home />
-    </>
+      <Router>
+        <PageLayout>
+          <Switch>
+            <Route path="/home">
+              <Home />
+            </Route>
+            <Route path="/pokeDex">
+              <PokeDex />
+            </Route>
+            <Route path="/">
+              <Home />
+            </Route>
+          </Switch>
+        </PageLayout>
+      </Router>
+    </ThemeProvider>
   );
 }
 
