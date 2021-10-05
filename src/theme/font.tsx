@@ -1,4 +1,3 @@
-/* eslint-disable prefer-destructuring */
 import { Scale } from "./types";
 export const fonts = {
   primary: `"SJ Sans","Open Sans","Helvetica Neue",Helvetica,Arial,"sans-serif"`,

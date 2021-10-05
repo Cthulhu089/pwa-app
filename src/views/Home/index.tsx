@@ -1,12 +1,20 @@
+import React, { useCallback } from "react";
 import logo from "../../logo.svg";
+import { useHistory } from "react-router-dom";
+import "../../App.css";
+import { Button } from "antd";
 
-const Home = () => {
+function Home() {
+  const history = useHistory();
+  const handleOnClick = useCallback(() => {
+    history.push("/pokedex");
+  }, []);
   return (
     <div className="App">
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
         <p>
-          PWA <code>src/App.tsx</code> and save to reload.
+          Components <code>src/App.tsx</code> and save to reload.
         </p>
         <a
           className="App-link"
@@ -16,9 +24,12 @@ const Home = () => {
         >
           Learn React
         </a>
+        <Button type="primary" onClick={handleOnClick}>
+          Pokedex
+        </Button>
       </header>
     </div>
   );
-};
+}
 
 export default Home;

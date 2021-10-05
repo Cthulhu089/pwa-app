@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { Input, Button } from "antd";
-import Box from "../../components/basics/Box";
-import Row from "../../components/basics/Row";
-import Column from "../../components/basics/Column";
+import Box from "../../components/Layout/Box";
+import Row from "../../components/Layout/Row";
+import Column from "../../components/Layout/Column";
 
 type EvolutionLineProps = {
   name: string;
@@ -48,23 +48,25 @@ const PokeDex = () => {
   }, []);
 
   return (
-    <Box>
-      <Row>
-        <Column>Marco</Column>
-      </Row>
-      <Row>
-        <Column>
-          <Input
-            placeholder="Search your pokemon"
-            value={search}
-            onChange={handleOnChangeSearch}
-          />
-        </Column>
-        <Column>
-          <Button type="primary">Search</Button>
-        </Column>
-      </Row>
-    </Box>
+    <div className="App">
+      <Box>
+        <Row>
+          <Column>Marco</Column>
+        </Row>
+        <Row>
+          <Column>
+            <Input
+              placeholder="Search your pokemon"
+              value={search}
+              onChange={handleOnChangeSearch}
+            />
+          </Column>
+          <Column>
+            <Button type="primary">Search</Button>
+          </Column>
+        </Row>
+      </Box>
+    </div>
   );
 };
 
