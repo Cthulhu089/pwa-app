@@ -14,7 +14,7 @@ function Home() {
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
         <p>
-          Components <code>src/App.tsx</code> and save to reload.
+          handleOnUpdate <code>src/App.tsx</code> and save to reload.
         </p>
         <a
           className="App-link"

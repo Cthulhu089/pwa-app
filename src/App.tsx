@@ -2,7 +2,6 @@ import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import { ThemeProvider } from "styled-components/macro";
 import Home from "./views/Home";
 import PokeDex from "./views/PokeDex";
-// import PageLayout from "./components/Layout";
 import theme from "./theme";
 
 function App() {
