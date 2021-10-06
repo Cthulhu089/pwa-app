@@ -1,8 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
 import { Input, Button } from "antd";
+import styled from "styled-components/macro";
 import Box from "../../components/Layout/Box";
 import Row from "../../components/Layout/Row";
 import Column from "../../components/Layout/Column";
+import Container from "../../components/Layout/Container";
+
+const PokeDexContainer = styled(Container)`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;
 
 type EvolutionLineProps = {
   name: string;
@@ -48,11 +56,8 @@ const PokeDex = () => {
   }, []);
 
   return (
-    <div className="App">
+    <PokeDexContainer flexDirection={["row", null, null, "column"]} pt={50}>
       <Box>
-        <Row>
-          <Column>Marco</Column>
-        </Row>
         <Row>
           <Column>
             <Input
@@ -65,8 +70,16 @@ const PokeDex = () => {
             <Button type="primary">Search</Button>
           </Column>
         </Row>
+        <Row>
+          <Column>Marco</Column>
+          <Column>Marco</Column>
+          <Column>Marco</Column>
+          <Column>Marco</Column>
+          <Column>Marco</Column>
+        </Row>
+        <Row></Row>
       </Box>
-    </div>
+    </PokeDexContainer>
   );
 };
 
