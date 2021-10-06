@@ -9,9 +9,9 @@ type EvolutionProps = {
 
 const EvolutionLine = ({ evolutionLine }: EvolutionProps) => {
   return (
-    <Row pt={50}>
+    <Row flexDirection={["column", null, null, "row"]} pt={50}>
       {evolutionLine.map(({ name, sprite }) => (
-        <Column>
+        <Column width={1} key={name}>
           <Row>
             <img width="150px" src={sprite} alt={name} />
           </Row>
