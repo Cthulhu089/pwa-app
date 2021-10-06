@@ -9,12 +9,13 @@ function Home() {
   const handleOnClick = useCallback(() => {
     history.push("/pokedex");
   }, []);
+
   return (
     <div className="App">
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
         <p>
-          hasUpdates <code>src/App.tsx</code> and save to reload.
+          Show snackbar<code>src/App.tsx</code> and save to reload.
         </p>
         <a
           className="App-link"
