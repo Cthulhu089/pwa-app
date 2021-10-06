@@ -10,24 +10,28 @@ import { useCallback, useEffect, useState } from "react";
 
 function App() {
   const [showSnackbar, setShowSnackbar] = useState<boolean>(false);
+  const [registration, setRegistration] = useState<ServiceWorkerRegistration>();
+
   useEffect(() => {
     // If you want your app to work offline and load faster, you can change
     // unregister() to register() below. Note this comes with some pitfalls.
     // Learn more about service workers: https://cra.link/PWA
     serviceWorkerRegistration.register({
-      onSuccess: () => {
-        console.log("-------------Success------------");
-      },
-      onUpdate: () => {
-        console.log("-------------Update------------");
+      onSuccess: () => {},
+      onUpdate: (registration: ServiceWorkerRegistration) => {
+        setRegistration(registration);
         setShowSnackbar(true);
       },
     });
   }, []);
 
-  const handleOnYes = useCallback(() => {
-    setShowSnackbar(false);
-  }, []);
+  const handleOnYes = useCallback(async () => {
+    if (!!registration && !!registration.waiting) {
+      await registration.waiting.postMessage({ type: "SKIP_WAITING" });
+      window.location.reload();
+      setShowSnackbar(false);
+    }
+  }, [registration]);
 
   return (
     <Router>
