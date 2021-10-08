@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import SnackBar from "my-react-snackbar";
+import Loader from "react-loader-spinner";
 import { Input, Button } from "antd";
 import styled from "styled-components/macro";
 import Row from "../../components/Layout/Row";
@@ -35,8 +37,11 @@ type PokemonProps = {
 const PokeDex = () => {
   const [pokemon, setPokemon] = useState<PokemonProps>();
   const [search, setSearch] = useState<string>("");
+  const [showLoader, setShowLoader] = useState<boolean>(false);
+  const [showSnackbar, setShowSnackbar] = useState<boolean>(false);
 
   const getPokemon = useCallback(async (pokemonName) => {
+    setShowLoader(true);
     try {
       const response = await fetch(
         `https://regalion-api.herokuapp.com/${pokemonName}`,
@@ -47,9 +52,11 @@ const PokeDex = () => {
         }
       );
       const pokemon = await response.json();
-      setPokemon(pokemon[0]);
+      await setPokemon(pokemon[0]);
+      setShowLoader(false);
     } catch (error) {
-      console.log("error", error);
+      setShowLoader(false);
+      setShowSnackbar(true);
     }
   }, []);
 
@@ -63,13 +70,28 @@ const PokeDex = () => {
     }
   }, [search, getPokemon]);
 
+  const handleOnYes = useCallback(async () => {
+    setShowSnackbar(false);
+  }, []);
+
   return (
     <PokeDexContainer flexDirection={["row", null, null, "column"]} pt={50}>
-      {console.log("pokemon", pokemon)}
       <Row>
         <img src={"/Pokedex_logo.png"} alt="pokeDex" />
       </Row>
+      <SnackBar
+        open={showSnackbar}
+        message={"The pokemon is not on your zone"}
+        position="top-center"
+        type="error"
+        yesLabel="ok"
+        onYes={handleOnYes}
+      />
       <Row pt={3}>
+        {showLoader && (
+          <Loader type="TailSpin" color="#00BFFF" height={30} width={40} />
+        )}
+        <Column></Column>
         <Column>
           <Input
             placeholder="Search your pokemon"

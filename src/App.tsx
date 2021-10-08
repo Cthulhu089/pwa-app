@@ -39,10 +39,11 @@ function App() {
         <SnackBar
           open={showSnackbar}
           message={"There is a New Version Available"}
-          position="bottom-top"
+          position="top-center"
           type="info"
           yesLabel="Update"
           onYes={handleOnYes}
+          closeOnClick={false}
         />
         <SnackBar />
         <Switch>
