@@ -16,6 +16,10 @@ import {
   SpaceProps,
   typography,
   TypographyProps,
+  alignItems,
+  AlignItemsProps,
+  justifyContent,
+  JustifyContentProps,
 } from "styled-system";
 
 export type BoxProps = SpaceProps &
@@ -25,6 +29,8 @@ export type BoxProps = SpaceProps &
   PositionProps &
   ShadowProps &
   BackgroundProps &
+  AlignItemsProps &
+  JustifyContentProps &
   TypographyProps & { as?: React.ElementType | keyof JSX.IntrinsicElements };
 
 const Box = styled.div<BoxProps>(
@@ -35,7 +41,9 @@ const Box = styled.div<BoxProps>(
   shadow,
   layout,
   background,
-  position
+  position,
+  alignItems,
+  justifyContent
 );
 
 export default Box;

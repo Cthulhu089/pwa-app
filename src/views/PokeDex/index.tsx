@@ -1,21 +1,35 @@
 import { useCallback, useEffect, useState } from "react";
 import { Input, Button } from "antd";
-import Box from "../../components/Layout/Box";
+import styled from "styled-components/macro";
 import Row from "../../components/Layout/Row";
 import Column from "../../components/Layout/Column";
+import Container from "../../components/Layout/Container";
+import EvolutionLine from "./components/EvolutionLine";
+import PokemonDescription from "./components/PokemonDescription";
 
-type EvolutionLineProps = {
+const PokeDexContainer = styled(Container)`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;
+
+export type EvolutionLineProps = {
   name: string;
   sprite: string;
 };
 
 type PokemonProps = {
   name: string;
+  abilities: {
+    hidden: string[];
+    normal: string[];
+  };
   description: string;
   family: {
     evolutionLine: Array<EvolutionLineProps>;
   };
   sprite: string;
+  types: string[];
 };
 
 const PokeDex = () => {
@@ -39,34 +53,55 @@ const PokeDex = () => {
     }
   }, []);
 
-  useEffect(() => {
-    getPokemon("pikachu");
-  }, [getPokemon]);
-
   const handleOnChangeSearch = useCallback((e) => {
     setSearch(e.target.value);
   }, []);
 
+  const handleOnSearch = useCallback(() => {
+    if (!!search && search !== "") {
+      getPokemon(search);
+    }
+  }, [search, getPokemon]);
+
   return (
-    <div className="App">
-      <Box>
+    <PokeDexContainer flexDirection={["row", null, null, "column"]} pt={50}>
+      {console.log("pokemon", pokemon)}
+      <Row>
+        <img src={"/Pokedex_logo.png"} alt="pokeDex" />
+      </Row>
+      <Row pt={3}>
+        <Column>
+          <Input
+            placeholder="Search your pokemon"
+            value={search}
+            onChange={handleOnChangeSearch}
+          />
+        </Column>
+        <Column>
+          <Button onClick={handleOnSearch} type="primary">
+            Search
+          </Button>
+        </Column>
+      </Row>
+      {!!pokemon && (
         <Row>
-          <Column>Marco</Column>
+          <PokemonDescription
+            name={pokemon.name}
+            description={pokemon.description}
+            sprite={pokemon.sprite}
+            abilities={pokemon.abilities.hidden.concat(
+              pokemon.abilities.normal
+            )}
+            types={pokemon.types}
+          />
         </Row>
+      )}
+      {!!pokemon && (
         <Row>
-          <Column>
-            <Input
-              placeholder="Search your pokemon"
-              value={search}
-              onChange={handleOnChangeSearch}
-            />
-          </Column>
-          <Column>
-            <Button type="primary">Search</Button>
-          </Column>
+          <EvolutionLine evolutionLine={pokemon.family.evolutionLine} />
         </Row>
-      </Box>
-    </div>
+      )}
+    </PokeDexContainer>
   );
 };
 

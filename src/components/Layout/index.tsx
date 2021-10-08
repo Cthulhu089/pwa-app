@@ -1,5 +1,5 @@
 import styled from "styled-components/macro";
-import Flex from "../basics/Flex";
+import Flex from "./Flex";
 
 const PageLayout = styled(Flex)`
   flex-direction: column;

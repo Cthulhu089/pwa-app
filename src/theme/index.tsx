@@ -1,5 +1,5 @@
 import { createGlobalStyle } from "styled-components/macro";
-
+import space from "./space";
 import { fonts, fontSizes, fontWeights, lineHeights } from "./font";
 import colors from "./colors";
 
@@ -9,6 +9,7 @@ const theme = {
   fonts,
   lineHeights,
   colors,
+  space,
 };
 
 export const defaultLayoutMargin = 4; // default margin theme.space[4] for Columns and Rows
