@@ -5,6 +5,7 @@ import Row from "../../components/Layout/Row";
 import Column from "../../components/Layout/Column";
 import Container from "../../components/Layout/Container";
 import EvolutionLine from "./components/EvolutionLine";
+import PokemonDescription from "./components/PokemonDescription";
 
 const PokeDexContainer = styled(Container)`
   display: flex;
@@ -19,11 +20,16 @@ export type EvolutionLineProps = {
 
 type PokemonProps = {
   name: string;
+  abilities: {
+    hidden: string[];
+    normal: string[];
+  };
   description: string;
   family: {
     evolutionLine: Array<EvolutionLineProps>;
   };
   sprite: string;
+  types: string[];
 };
 
 const PokeDex = () => {
@@ -77,6 +83,19 @@ const PokeDex = () => {
           </Button>
         </Column>
       </Row>
+      {!!pokemon && (
+        <Row>
+          <PokemonDescription
+            name={pokemon.name}
+            description={pokemon.description}
+            sprite={pokemon.sprite}
+            abilities={pokemon.abilities.hidden.concat(
+              pokemon.abilities.normal
+            )}
+            types={pokemon.types}
+          />
+        </Row>
+      )}
       {!!pokemon && (
         <Row>
           <EvolutionLine evolutionLine={pokemon.family.evolutionLine} />

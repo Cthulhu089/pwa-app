@@ -15,7 +15,7 @@ const EvolutionLine = ({ evolutionLine }: EvolutionProps) => {
           <Row>
             <img width="150px" src={sprite} alt={name} />
           </Row>
-          <Row>
+          <Row ml={9}>
             <Text>{name}</Text>
           </Row>
         </Column>
