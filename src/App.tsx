@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useState } from "react";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import { ThemeProvider } from "styled-components/macro";
 import SnackBar from "my-react-snackbar";
@@ -6,7 +7,6 @@ import Home from "./views/Home";
 import PokeDex from "./views/PokeDex";
 import theme from "./theme";
 import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
-import { useCallback, useEffect, useState } from "react";
 
 function App() {
   const [showSnackbar, setShowSnackbar] = useState<boolean>(false);
