@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import { useCallback } from "react";
 import logo from "../../logo.svg";
 import { useHistory } from "react-router-dom";
 import "../../App.css";
@@ -8,14 +8,13 @@ function Home() {
   const history = useHistory();
   const handleOnClick = useCallback(() => {
     history.push("/pokedex");
-  }, []);
+  }, [history]);
+
   return (
     <div className="App">
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          handleOnUpdate <code>src/App.tsx</code> and save to reload.
-        </p>
+        <p>Search your Pokemon</p>
         <a
           className="App-link"
           href="https://reactjs.org"
