@@ -8,6 +8,8 @@ import Column from "../../components/Layout/Column";
 import Container from "../../components/Layout/Container";
 import EvolutionLine from "./components/EvolutionLine";
 import PokemonDescription from "./components/PokemonDescription";
+import { getMethod } from "../../utils/methods/GetMethod";
+import { PokemonProps, EvolveProps } from "../../utils/types/PokemonTypes";
 
 const PokeDexContainer = styled(Container)`
   display: flex;
@@ -15,94 +17,29 @@ const PokeDexContainer = styled(Container)`
   align-items: center;
 `;
 
-export type EvolutionLineProps = {
-  name: string;
-  sprite: string;
-};
-
-type TypesProps = {
-  type: {
-    name: string;
-  };
-};
-
-type AbilitiesProps = {
-  ability: {
-    name: string;
-  };
-};
-
-type SpeciesProps = {
-  url: string;
-};
-
-type PokemonProps = {
-  name: string;
-  abilities: AbilitiesProps[];
-  sprites: {
-    front_default: string;
-  };
-  types: TypesProps[];
-  species: SpeciesProps;
-};
-
 const PokeDex = () => {
   const [pokemon, setPokemon] = useState<PokemonProps>();
+  const [evolveLine, setEvolveLine] = useState<EvolveProps>();
   const [search, setSearch] = useState<string>("");
   const [showLoader, setShowLoader] = useState<boolean>(false);
   const [showSnackbar, setShowSnackbar] = useState<boolean>(false);
 
-  const getMethod = useCallback(async (url: string) => {
+  const getPokemon = useCallback(async (pokemonName) => {
+    setShowLoader(true);
     try {
-      const fetchCall = await fetch(url, {
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-        },
-      });
-      const response = await fetchCall.json();
-      return response;
+      const pokemon = await getMethod(
+        `https://pokeapi.co/api/v2/pokemon/${pokemonName.toLowerCase()}`
+      );
+      const specie = await getMethod(pokemon.species.url);
+      const evolutionLine = await getMethod(specie.evolution_chain.url);
+      await setPokemon(pokemon);
+      setEvolveLine(evolutionLine.chain.evolves_to[0]);
+      setShowLoader(false);
     } catch (error) {
       setShowLoader(false);
       setShowSnackbar(true);
     }
   }, []);
-
-  const setEvolutionLine = useCallback((evolves, pokemonName) => {
-    const {
-      species: { name },
-      evolves_to,
-    } = evolves;
-
-    if (!!evolves_to && evolves_to[0].species.name === pokemonName) {
-      //one evolution or last evolution
-      console.log("one none", name, evolves_to[0].species.name);
-    } else if (name === pokemonName && !!evolves_to) {
-      console.log("more than one", name, evolves_to[0].species.name);
-    } else {
-      console.log("evolves", evolves);
-    }
-  }, []);
-
-  const getPokemon = useCallback(
-    async (pokemonName) => {
-      setShowLoader(true);
-      try {
-        const pokemon = await getMethod(
-          `https://pokeapi.co/api/v2/pokemon/${pokemonName.toLowerCase()}`
-        );
-        console.log("pokemon", pokemon.species.url);
-        const specie = await getMethod(pokemon.species.url);
-        const evolutionLine = await getMethod(specie.evolution_chain.url);
-        await setPokemon(pokemon);
-        await setEvolutionLine(evolutionLine.chain.evolves_to[0], pokemonName);
-        setShowLoader(false);
-      } catch (error) {
-        setShowLoader(false);
-        setShowSnackbar(true);
-      }
-    },
-    [getMethod, setEvolutionLine]
-  );
 
   const handleOnChangeSearch = useCallback((e) => {
     setSearch(e.target.value);
@@ -160,11 +97,11 @@ const PokeDex = () => {
           />
         </Row>
       )}
-      {/* {!!pokemon && (
+      {!!pokemon && !!evolveLine ? (
         <Row>
-          <EvolutionLine evolutionLine={pokemon.family.evolutionLine} />
+          <EvolutionLine evolveLine={evolveLine} name={pokemon.name} />
         </Row>
-      )} */}
+      ) : null}
     </PokeDexContainer>
   );
 };
