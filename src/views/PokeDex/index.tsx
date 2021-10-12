@@ -20,18 +20,30 @@ export type EvolutionLineProps = {
   sprite: string;
 };
 
+type TypesProps = {
+  type: {
+    name: string;
+  };
+};
+
+type AbilitiesProps = {
+  ability: {
+    name: string;
+  };
+};
+
+type SpeciesProps = {
+  url: string;
+};
+
 type PokemonProps = {
   name: string;
-  abilities: {
-    hidden: string[];
-    normal: string[];
+  abilities: AbilitiesProps[];
+  sprites: {
+    front_default: string;
   };
-  description: string;
-  family: {
-    evolutionLine: Array<EvolutionLineProps>;
-  };
-  sprite: string;
-  types: string[];
+  types: TypesProps[];
+  species: SpeciesProps;
 };
 
 const PokeDex = () => {
@@ -40,25 +52,57 @@ const PokeDex = () => {
   const [showLoader, setShowLoader] = useState<boolean>(false);
   const [showSnackbar, setShowSnackbar] = useState<boolean>(false);
 
-  const getPokemon = useCallback(async (pokemonName) => {
-    setShowLoader(true);
+  const getMethod = useCallback(async (url: string) => {
     try {
-      const response = await fetch(
-        `https://regalion-api.herokuapp.com/${pokemonName}`,
-        {
-          headers: {
-            "Access-Control-Allow-Origin": "*",
-          },
-        }
-      );
-      const pokemon = await response.json();
-      await setPokemon(pokemon[0]);
-      setShowLoader(false);
+      const fetchCall = await fetch(url, {
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
+      const response = await fetchCall.json();
+      return response;
     } catch (error) {
       setShowLoader(false);
       setShowSnackbar(true);
     }
   }, []);
+
+  const setEvolutionLine = useCallback((evolves, pokemonName) => {
+    const {
+      species: { name },
+      evolves_to,
+    } = evolves;
+
+    if (!!evolves_to && evolves_to[0].species.name === pokemonName) {
+      //one evolution or last evolution
+      console.log("one none", name, evolves_to[0].species.name);
+    } else if (name === pokemonName && !!evolves_to) {
+      console.log("more than one", name, evolves_to[0].species.name);
+    } else {
+      console.log("evolves", evolves);
+    }
+  }, []);
+
+  const getPokemon = useCallback(
+    async (pokemonName) => {
+      setShowLoader(true);
+      try {
+        const pokemon = await getMethod(
+          `https://pokeapi.co/api/v2/pokemon/${pokemonName.toLowerCase()}`
+        );
+        console.log("pokemon", pokemon.species.url);
+        const specie = await getMethod(pokemon.species.url);
+        const evolutionLine = await getMethod(specie.evolution_chain.url);
+        await setPokemon(pokemon);
+        await setEvolutionLine(evolutionLine.chain.evolves_to[0], pokemonName);
+        setShowLoader(false);
+      } catch (error) {
+        setShowLoader(false);
+        setShowSnackbar(true);
+      }
+    },
+    [getMethod, setEvolutionLine]
+  );
 
   const handleOnChangeSearch = useCallback((e) => {
     setSearch(e.target.value);
@@ -109,20 +153,18 @@ const PokeDex = () => {
         <Row>
           <PokemonDescription
             name={pokemon.name}
-            description={pokemon.description}
-            sprite={pokemon.sprite}
-            abilities={pokemon.abilities.hidden.concat(
-              pokemon.abilities.normal
-            )}
-            types={pokemon.types}
+            description={""}
+            sprite={pokemon.sprites.front_default}
+            abilities={pokemon.abilities.map(({ ability: { name } }) => name)}
+            types={pokemon.types.map(({ type: { name } }) => name)}
           />
         </Row>
       )}
-      {!!pokemon && (
+      {/* {!!pokemon && (
         <Row>
           <EvolutionLine evolutionLine={pokemon.family.evolutionLine} />
         </Row>
-      )}
+      )} */}
     </PokeDexContainer>
   );
 };
