@@ -37,25 +37,28 @@ const EvolutionLine = ({ evolveLine, name }: EvolutionLineProps) => {
     setEvolutionChain(evolutionLine);
   }, []);
 
-  const setEvolutionLine = useCallback((evolveLine, pokemonName) => {
-    let evolutionNames: string[] = [];
-    const {
-      species: { name },
-      evolves_to,
-    } = evolveLine;
+  const setEvolutionLine = useCallback(
+    (evolveLine, pokemonName) => {
+      let evolutionNames: string[] = [];
+      const {
+        species: { name },
+        evolves_to,
+      } = evolveLine;
 
-    if (name !== pokemonName) {
-      evolutionNames.push(name);
-    }
-
-    evolves_to.forEach(({ species: { name } }) => {
       if (name !== pokemonName) {
         evolutionNames.push(name);
       }
-    });
 
-    createEvolutionLine(evolutionNames);
-  }, []);
+      evolves_to.forEach(({ species: { name } }) => {
+        if (name !== pokemonName) {
+          evolutionNames.push(name);
+        }
+      });
+
+      createEvolutionLine(evolutionNames);
+    },
+    [createEvolutionLine]
+  );
 
   useEffect(() => {
     if (!!evolveLine && !!name) {

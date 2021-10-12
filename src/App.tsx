@@ -18,7 +18,8 @@ function App() {
     // Learn more about service workers: https://cra.link/PWA
     serviceWorkerRegistration.register({
       onSuccess: () => {},
-      onUpdate: (registration: ServiceWorkerRegistration) => {
+      onUpdate: (registration) => {
+        console.log("registration", registration.sync);
         setRegistration(registration);
         setShowSnackbar(true);
       },
