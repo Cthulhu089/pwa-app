@@ -9,13 +9,22 @@
 // service worker, and the Workbox build step will be skipped.
 
 import { clientsClaim } from "workbox-core";
-import { BackgroundSyncPlugin, Queue } from "workbox-background-sync";
 import { ExpirationPlugin } from "workbox-expiration";
 import { precacheAndRoute, createHandlerBoundToURL } from "workbox-precaching";
 import { registerRoute } from "workbox-routing";
-import { StaleWhileRevalidate, NetworkOnly } from "workbox-strategies";
+import { StaleWhileRevalidate } from "workbox-strategies";
+import { openDB } from "idb";
+import { Queue } from "workbox-background-sync";
 
-// const queue = new Queue("myQueueName");
+const queue = new Queue("myQueueName");
+
+let dbPromise = openDB("get-store", 1, {
+  upgrade: (db) => {
+    if (!db.objectStoreNames.contains("gets")) {
+      db.createObjectStore("gets", { keyPath: "id" });
+    }
+  },
+});
 
 declare const self: ServiceWorkerGlobalScope;
 
@@ -73,33 +82,6 @@ registerRoute(
   })
 );
 
-try {
-  const bgSyncPlugin = new BackgroundSyncPlugin("myQueueName", {
-    onSync: async ({ queue }) => {
-      let entry;
-
-      while ((entry = await queue.shiftRequest())) {
-        console.log("entry", entry);
-        try {
-          console.log("queue", queue);
-        } catch (error) {
-          console.log("error", error);
-        }
-      }
-    },
-    maxRetentionTime: 24 * 60, //In minutes 24 hrs,
-  });
-  registerRoute(
-    "https://pokeapi.co/api/v2",
-    new NetworkOnly({
-      plugins: [bgSyncPlugin],
-    }),
-    "GET"
-  );
-} catch (error) {
-  console.log("error", error);
-}
-
 // This allows the web app to trigger skipWaiting via
 // registration.waiting.postMessage({type: 'SKIP_WAITING'})
 self.addEventListener("message", (event) => {
@@ -110,26 +92,25 @@ self.addEventListener("message", (event) => {
 
 // Any other custom service worker logic can go here.
 
-// self.addEventListener("fetch", (event) => {
-//   // Add in your own criteria here to return early if this
-//   // isn't a request that should use background sync.
+self.addEventListener("fetch", (event) => {
+  // Add in your own criteria here to return early if this
+  // isn't a request that should use background sync.
 
-//   if (event.request.method !== "POST") {
-//     return;
-//   }
+  // if (event.request.method !== "POST") {
+  //   return;
+  // }
 
-//   const bgSyncLogic = async (): Promise<Response> => {
-//     try {
-//       const response = await fetch(event.request.clone());
-//       console.log("Return", response);
-//       return response;
-//     } catch (error: any) {
-//       console.log("Error", error);
-//       await queue.pushRequest({ request: event.request });
-//       return error;
-//     }
-//   };
-//   console.log("bgSyncLogic", bgSyncLogic);
+  const bgSyncLogic = async (): Promise<Response> => {
+    try {
+      const response = await fetch(event.request.clone());
+      console.log("Return", response);
+      return response;
+    } catch (error: any) {
+      console.log("Error", error);
+      await queue.pushRequest({ request: event.request });
+      return error;
+    }
+  };
 
-//   event.respondWith(bgSyncLogic());
-// });
+  event.respondWith(bgSyncLogic());
+});

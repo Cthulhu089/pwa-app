@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { connect } from "react-redux";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import { ThemeProvider } from "styled-components/macro";
 import SnackBar from "my-react-snackbar";
@@ -7,24 +8,30 @@ import Home from "./views/Home";
 import PokeDex from "./views/PokeDex";
 import theme from "./theme";
 import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
+import { ServiceWorkerProps } from "./utils/types/serviceWorker";
+import { setSWRegistration } from "./actions/ServiceWorker/";
 
-function App() {
+function App(props) {
+  const { setSWRegistration } = props;
   const [showSnackbar, setShowSnackbar] = useState<boolean>(false);
-  const [registration, setRegistration] = useState<ServiceWorkerRegistration>();
+  const [registration, setRegistration] = useState<ServiceWorkerProps>();
 
   useEffect(() => {
     // If you want your app to work offline and load faster, you can change
     // unregister() to register() below. Note this comes with some pitfalls.
     // Learn more about service workers: https://cra.link/PWA
     serviceWorkerRegistration.register({
-      onSuccess: () => {},
-      onUpdate: (registration) => {
-        console.log("registration", registration.sync);
+      onSuccess: (registration: ServiceWorkerProps) => {
+        console.log("registration2", registration);
+      },
+      onUpdate: (registration: ServiceWorkerProps) => {
+        console.log("registration12", registration);
+        setSWRegistration(registration);
         setRegistration(registration);
         setShowSnackbar(true);
       },
     });
-  }, []);
+  }, [setSWRegistration]);
 
   const handleOnYes = useCallback(async () => {
     if (!!registration && !!registration.waiting) {
@@ -63,4 +70,9 @@ function App() {
   );
 }
 
-export default App;
+const mapDispatchToProps = (dispatch) => ({
+  setBlueKeyAction: (registration: ServiceWorkerProps) =>
+    dispatch(setSWRegistration(registration)),
+});
+
+export default connect(null, mapDispatchToProps)(App);
