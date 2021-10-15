@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { connect } from "react-redux";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import { ThemeProvider } from "styled-components/macro";
 import SnackBar from "my-react-snackbar";
@@ -7,23 +8,32 @@ import Home from "./views/Home";
 import PokeDex from "./views/PokeDex";
 import theme from "./theme";
 import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
+import { ServiceWorkerProps } from "./utils/types/serviceWorker";
+import { setSWRegistration } from "./actions/ServiceWorker/";
 
-function App() {
+function App(props) {
+  const { SWRegistration } = props;
   const [showSnackbar, setShowSnackbar] = useState<boolean>(false);
-  const [registration, setRegistration] = useState<ServiceWorkerRegistration>();
+  const [registration, setRegistration] = useState<ServiceWorkerProps>();
 
   useEffect(() => {
     // If you want your app to work offline and load faster, you can change
     // unregister() to register() below. Note this comes with some pitfalls.
     // Learn more about service workers: https://cra.link/PWA
     serviceWorkerRegistration.register({
-      onSuccess: () => {},
-      onUpdate: (registration: ServiceWorkerRegistration) => {
-        setRegistration(registration);
-        setShowSnackbar(true);
+      onSuccess: (registration: ServiceWorkerProps) => {},
+      onUpdate: (registration: ServiceWorkerProps) => {
+        try {
+          console.log("12321321");
+          SWRegistration(registration);
+          setRegistration(registration);
+          setShowSnackbar(true);
+        } catch (error) {
+          console.log("error", error);
+        }
       },
     });
-  }, []);
+  }, [setSWRegistration]);
 
   const handleOnYes = useCallback(async () => {
     if (!!registration && !!registration.waiting) {
@@ -39,10 +49,11 @@ function App() {
         <SnackBar
           open={showSnackbar}
           message={"There is a New Version Available"}
-          position="bottom-top"
+          position="top-center"
           type="info"
           yesLabel="Update"
           onYes={handleOnYes}
+          closeOnClick={false}
         />
         <SnackBar />
         <Switch>
@@ -61,4 +72,9 @@ function App() {
   );
 }
 
-export default App;
+const mapDispatchToProps = (dispatch) => ({
+  SWRegistration: (registration: ServiceWorkerProps) =>
+    dispatch(setSWRegistration(registration)),
+});
+
+export default connect(null, mapDispatchToProps)(App);

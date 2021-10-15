@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import SnackBar from "my-react-snackbar";
+import Loader from "react-loader-spinner";
 import { Input, Button } from "antd";
 import styled from "styled-components/macro";
 import Row from "../../components/Layout/Row";
@@ -6,6 +8,8 @@ import Column from "../../components/Layout/Column";
 import Container from "../../components/Layout/Container";
 import EvolutionLine from "./components/EvolutionLine";
 import PokemonDescription from "./components/PokemonDescription";
+import { getMethod } from "../../utils/methods/GetMethod";
+import { PokemonProps, EvolveProps } from "../../utils/types/PokemonTypes";
 
 const PokeDexContainer = styled(Container)`
   display: flex;
@@ -13,43 +17,27 @@ const PokeDexContainer = styled(Container)`
   align-items: center;
 `;
 
-export type EvolutionLineProps = {
-  name: string;
-  sprite: string;
-};
-
-type PokemonProps = {
-  name: string;
-  abilities: {
-    hidden: string[];
-    normal: string[];
-  };
-  description: string;
-  family: {
-    evolutionLine: Array<EvolutionLineProps>;
-  };
-  sprite: string;
-  types: string[];
-};
-
 const PokeDex = () => {
   const [pokemon, setPokemon] = useState<PokemonProps>();
+  const [evolveLine, setEvolveLine] = useState<EvolveProps>();
   const [search, setSearch] = useState<string>("");
+  const [showLoader, setShowLoader] = useState<boolean>(false);
+  const [showSnackbar, setShowSnackbar] = useState<boolean>(false);
 
   const getPokemon = useCallback(async (pokemonName) => {
+    setShowLoader(true);
     try {
-      const response = await fetch(
-        `https://regalion-api.herokuapp.com/${pokemonName}`,
-        {
-          headers: {
-            "Access-Control-Allow-Origin": "*",
-          },
-        }
+      const pokemon = await getMethod(
+        `https://pokeapi.co/api/v2/pokemon/${pokemonName.toLowerCase()}`
       );
-      const pokemon = await response.json();
-      setPokemon(pokemon[0]);
+      const specie = await getMethod(pokemon.species.url);
+      const evolutionLine = await getMethod(specie.evolution_chain.url);
+      await setPokemon(pokemon);
+      setEvolveLine(evolutionLine.chain.evolves_to[0]);
+      setShowLoader(false);
     } catch (error) {
-      console.log("error", error);
+      setShowLoader(false);
+      setShowSnackbar(true);
     }
   }, []);
 
@@ -63,13 +51,28 @@ const PokeDex = () => {
     }
   }, [search, getPokemon]);
 
+  const handleOnYes = useCallback(async () => {
+    setShowSnackbar(false);
+  }, []);
+
   return (
     <PokeDexContainer flexDirection={["row", null, null, "column"]} pt={50}>
-      {console.log("pokemon", pokemon)}
       <Row>
         <img src={"/Pokedex_logo.png"} alt="pokeDex" />
       </Row>
+      <SnackBar
+        open={showSnackbar}
+        message={"The pokemon is not on your zone"}
+        position="top-center"
+        type="error"
+        yesLabel="ok"
+        onYes={handleOnYes}
+      />
       <Row pt={3}>
+        {showLoader && (
+          <Loader type="TailSpin" color="#00BFFF" height={30} width={40} />
+        )}
+        <Column></Column>
         <Column>
           <Input
             placeholder="Search your pokemon"
@@ -87,20 +90,18 @@ const PokeDex = () => {
         <Row>
           <PokemonDescription
             name={pokemon.name}
-            description={pokemon.description}
-            sprite={pokemon.sprite}
-            abilities={pokemon.abilities.hidden.concat(
-              pokemon.abilities.normal
-            )}
-            types={pokemon.types}
+            description={""}
+            sprite={pokemon.sprites.front_default}
+            abilities={pokemon.abilities.map(({ ability: { name } }) => name)}
+            types={pokemon.types.map(({ type: { name } }) => name)}
           />
         </Row>
       )}
-      {!!pokemon && (
+      {!!pokemon && !!evolveLine ? (
         <Row>
-          <EvolutionLine evolutionLine={pokemon.family.evolutionLine} />
+          <EvolutionLine evolveLine={evolveLine} name={pokemon.name} />
         </Row>
-      )}
+      ) : null}
     </PokeDexContainer>
   );
 };

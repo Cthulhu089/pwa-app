@@ -23,13 +23,17 @@ const PokemonDescription = ({
   types,
 }: PokemonDescriptionProps) => {
   return (
-    <Row flexDirection={["column", null, null, "row"]} pt={50}>
+    <Row pt={50}>
       <Column>
         <img width="300" src={sprite} alt={name} />
       </Column>
       <Column>
         <Row>
-          <Title fontSize={30}>{name}</Title>
+          {!!name && (
+            <Title fontSize={30}>
+              {name?.charAt(0).toUpperCase() + name?.slice(1)}
+            </Title>
+          )}
         </Row>
         <Row>{description}</Row>
         <Row>
