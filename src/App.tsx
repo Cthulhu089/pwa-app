@@ -12,7 +12,7 @@ import { ServiceWorkerProps } from "./utils/types/serviceWorker";
 import { setSWRegistration } from "./actions/ServiceWorker/";
 
 function App(props) {
-  const { setSWRegistration } = props;
+  const { SWRegistration } = props;
   const [showSnackbar, setShowSnackbar] = useState<boolean>(false);
   const [registration, setRegistration] = useState<ServiceWorkerProps>();
 
@@ -21,14 +21,16 @@ function App(props) {
     // unregister() to register() below. Note this comes with some pitfalls.
     // Learn more about service workers: https://cra.link/PWA
     serviceWorkerRegistration.register({
-      onSuccess: (registration: ServiceWorkerProps) => {
-        console.log("registration2", registration);
-      },
+      onSuccess: (registration: ServiceWorkerProps) => {},
       onUpdate: (registration: ServiceWorkerProps) => {
-        console.log("registration12", registration);
-        setSWRegistration(registration);
-        setRegistration(registration);
-        setShowSnackbar(true);
+        try {
+          console.log("12321321");
+          SWRegistration(registration);
+          setRegistration(registration);
+          setShowSnackbar(true);
+        } catch (error) {
+          console.log("error", error);
+        }
       },
     });
   }, [setSWRegistration]);
@@ -71,7 +73,7 @@ function App(props) {
 }
 
 const mapDispatchToProps = (dispatch) => ({
-  setBlueKeyAction: (registration: ServiceWorkerProps) =>
+  SWRegistration: (registration: ServiceWorkerProps) =>
     dispatch(setSWRegistration(registration)),
 });
 

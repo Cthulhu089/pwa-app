@@ -13,19 +13,7 @@ import { ExpirationPlugin } from "workbox-expiration";
 import { precacheAndRoute, createHandlerBoundToURL } from "workbox-precaching";
 import { registerRoute } from "workbox-routing";
 import { StaleWhileRevalidate } from "workbox-strategies";
-import { openDB } from "idb";
-import { Queue } from "workbox-background-sync";
-
-const queue = new Queue("myQueueName");
-
-let dbPromise = openDB("get-store", 1, {
-  upgrade: (db) => {
-    if (!db.objectStoreNames.contains("gets")) {
-      db.createObjectStore("gets", { keyPath: "id" });
-    }
-  },
-});
-
+import { writeData } from "./utils/IndexDBUtily";
 declare const self: ServiceWorkerGlobalScope;
 
 clientsClaim();
@@ -92,25 +80,23 @@ self.addEventListener("message", (event) => {
 
 // Any other custom service worker logic can go here.
 
-self.addEventListener("fetch", (event) => {
+self.addEventListener("fetch", async (event) => {
   // Add in your own criteria here to return early if this
   // isn't a request that should use background sync.
 
-  // if (event.request.method !== "POST") {
-  //   return;
-  // }
+  if (event.request.method === "POST") {
+    //Do somethinf
+  }
 
-  const bgSyncLogic = async (): Promise<Response> => {
+  if (event.request.url.includes("/pokemon/")) {
     try {
       const response = await fetch(event.request.clone());
-      console.log("Return", response);
+      const cloneRes = response.clone();
+      const data = await cloneRes.json();
+      await writeData("gets", data);
       return response;
-    } catch (error: any) {
-      console.log("Error", error);
-      await queue.pushRequest({ request: event.request });
+    } catch (error) {
       return error;
     }
-  };
-
-  event.respondWith(bgSyncLogic());
+  }
 });
