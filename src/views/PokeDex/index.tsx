@@ -10,6 +10,7 @@ import EvolutionLine from "./components/EvolutionLine";
 import PokemonDescription from "./components/PokemonDescription";
 import { getMethod } from "../../utils/methods/GetMethod";
 import { PokemonProps, EvolveProps } from "../../utils/types/PokemonTypes";
+import { readData } from "../../utils/IndexDBUtily/";
 
 const PokeDexContainer = styled(Container)`
   display: flex;
@@ -45,7 +46,10 @@ const PokeDex = () => {
     setSearch(e.target.value);
   }, []);
 
-  const handleOnSearch = useCallback(() => {
+  const handleOnSearch = useCallback(async () => {
+    const indexedPokemons = await readData("gets");
+    console.log("indexedPokemons", indexedPokemons);
+
     if (!!search && search !== "") {
       getPokemon(search);
     }

@@ -3,7 +3,7 @@ import { openDB } from "idb";
 let dbPromise = openDB("get-store", 1, {
   upgrade: (db) => {
     if (!db.objectStoreNames.contains("gets")) {
-      db.createObjectStore("gets", { keyPath: "id" });
+      db.createObjectStore("gets", { keyPath: "name" });
     }
   },
 });
@@ -21,4 +21,13 @@ export const writeData = async (storeName: string, data: any) => {
   }
 };
 
-export const readData = async (storeName: string) => {};
+export const readData = async (storeName: string) => {
+  try {
+    const db = await dbPromise;
+    const tx = db.transaction(storeName, "readonly");
+    const store = tx.objectStore(storeName);
+    return store.getAll();
+  } catch (error) {
+    return error;
+  }
+};

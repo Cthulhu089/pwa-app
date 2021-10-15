@@ -21,19 +21,20 @@ function App(props) {
     // unregister() to register() below. Note this comes with some pitfalls.
     // Learn more about service workers: https://cra.link/PWA
     serviceWorkerRegistration.register({
-      onSuccess: (registration: ServiceWorkerProps) => {},
+      onSuccess: (registration: ServiceWorkerProps) => {
+        SWRegistration(registration);
+      },
       onUpdate: (registration: ServiceWorkerProps) => {
         try {
-          console.log("12321321");
           SWRegistration(registration);
           setRegistration(registration);
           setShowSnackbar(true);
         } catch (error) {
-          console.log("error", error);
+          return error;
         }
       },
     });
-  }, [setSWRegistration]);
+  }, [SWRegistration]);
 
   const handleOnYes = useCallback(async () => {
     if (!!registration && !!registration.waiting) {
