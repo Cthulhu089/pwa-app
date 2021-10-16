@@ -1,6 +1,8 @@
 import { combineReducers } from "redux";
-import { swRegistration } from "../reducers/swRegistration";
+import { swRegistrationReducer } from "../reducers/swRegistration";
+import { SnackBarReducer } from "../reducers/snackBar";
 
 export default combineReducers({
-  swRegistration,
+  swRegistration: swRegistrationReducer,
+  snackBar: SnackBarReducer,
 });

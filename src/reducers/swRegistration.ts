@@ -5,12 +5,18 @@ type ActionProps = {
   payload?: ServiceWorkerProps;
 };
 
-export const swRegistration = (
-  state: ServiceWorkerProps | {} = {},
+const initialState = {
+  id: "1",
+};
+
+//TODO error is on the default value of the state
+export const swRegistrationReducer = (
+  state: ServiceWorkerProps | {} = initialState,
   action: ActionProps
 ) => {
   switch (action.type) {
     case "SET_REGISTRATION":
+      console.log("-1", { ...state, ...action.payload });
       return action.payload;
     case "CLEAR_REGISTRATION":
       return {};

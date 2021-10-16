@@ -93,7 +93,7 @@ self.addEventListener("fetch", async (event) => {
       const response = await fetch(event.request.clone());
       const cloneRes = response.clone();
       const data = await cloneRes.json();
-      await writeData("gets", data);
+      await writeData("pokemon", data);
       return response;
     } catch (error) {
       return error;

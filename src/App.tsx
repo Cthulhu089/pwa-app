@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { connect } from "react-redux";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import { ThemeProvider } from "styled-components/macro";
@@ -9,12 +9,12 @@ import PokeDex from "./views/PokeDex";
 import theme from "./theme";
 import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 import { ServiceWorkerProps } from "./utils/types/serviceWorker";
-import { setSWRegistration } from "./actions/ServiceWorker/";
+import { SnackBarProps } from "./utils/types/SnackBarTypes";
+import { setSWRegistrationAction } from "./actions/ServiceWorker/";
+import { setSnackBarAction } from "./actions/Snackbar";
 
 function App(props) {
-  const { SWRegistration } = props;
-  const [showSnackbar, setShowSnackbar] = useState<boolean>(false);
-  const [registration, setRegistration] = useState<ServiceWorkerProps>();
+  const { setSWRegistration, setSnackBar, snackBar, swRegistration } = props;
 
   useEffect(() => {
     // If you want your app to work offline and load faster, you can change
@@ -22,41 +22,60 @@ function App(props) {
     // Learn more about service workers: https://cra.link/PWA
     serviceWorkerRegistration.register({
       onSuccess: (registration: ServiceWorkerProps) => {
-        SWRegistration(registration);
+        setSWRegistration(registration);
       },
-      onUpdate: (registration: ServiceWorkerProps) => {
+      onUpdate: async (registration: ServiceWorkerProps) => {
         try {
-          SWRegistration(registration);
-          setRegistration(registration);
-          setShowSnackbar(true);
+          console.log("onUpdate", registration);
+          await setSWRegistration(registration);
+          await setSnackBar({
+            message: "There is a New Version Available",
+            type: "info",
+            open: true,
+            yesLabel: "Update",
+          });
         } catch (error) {
           return error;
         }
       },
     });
-  }, [SWRegistration]);
+  }, [setSWRegistration, setSnackBar]);
 
   const handleOnYes = useCallback(async () => {
-    if (!!registration && !!registration.waiting) {
-      await registration.waiting.postMessage({ type: "SKIP_WAITING" });
+    try {
+      await setSnackBar({
+        message: "",
+        type: "",
+        open: false,
+        yesLabel: "",
+      });
+      await swRegistration.waiting.postMessage({ type: "SKIP_WAITING" });
       window.location.reload();
-      setShowSnackbar(false);
+    } catch (error) {
+      console.log("error", error);
     }
-  }, [registration]);
+  }, [setSnackBar]);
+
+  const SnackBarRx = useMemo(() => {
+    if (!!snackBar && snackBar.open) {
+      return (
+        <SnackBar
+          open={snackBar.open}
+          message={snackBar.message}
+          position="top-center"
+          type={snackBar.type}
+          yesLabel={snackBar.yesLabel}
+          onYes={handleOnYes}
+          closeOnClick={snackBar.closeOnClick}
+        />
+      );
+    }
+  }, [handleOnYes, snackBar]);
 
   return (
     <Router>
       <ThemeProvider theme={theme}>
-        <SnackBar
-          open={showSnackbar}
-          message={"There is a New Version Available"}
-          position="top-center"
-          type="info"
-          yesLabel="Update"
-          onYes={handleOnYes}
-          closeOnClick={false}
-        />
-        <SnackBar />
+        {SnackBarRx}
         <Switch>
           <Route path="/home">
             <Home />
@@ -73,9 +92,15 @@ function App(props) {
   );
 }
 
+const mapStateToProps = (state) => {
+  return state;
+};
+
 const mapDispatchToProps = (dispatch) => ({
-  SWRegistration: (registration: ServiceWorkerProps) =>
-    dispatch(setSWRegistration(registration)),
+  setSWRegistration: (registration: ServiceWorkerProps) =>
+    dispatch(setSWRegistrationAction(registration)),
+  setSnackBar: (snackbar: SnackBarProps) =>
+    dispatch(setSnackBarAction(snackbar)),
 });
 
-export default connect(null, mapDispatchToProps)(App);
+export default connect(mapStateToProps, mapDispatchToProps)(App);

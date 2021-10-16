@@ -1,9 +1,9 @@
 import { openDB } from "idb";
 
-let dbPromise = openDB("get-store", 1, {
+let dbPromise = openDB("pokedex", 1, {
   upgrade: (db) => {
-    if (!db.objectStoreNames.contains("gets")) {
-      db.createObjectStore("gets", { keyPath: "name" });
+    if (!db.objectStoreNames.contains("pokemon")) {
+      db.createObjectStore("pokemon", { keyPath: "name" });
     }
   },
 });
@@ -21,7 +21,7 @@ export const writeData = async (storeName: string, data: any) => {
   }
 };
 
-export const readData = async (storeName: string) => {
+export const getAllData = async (storeName: string) => {
   try {
     const db = await dbPromise;
     const tx = db.transaction(storeName, "readonly");
@@ -30,4 +30,34 @@ export const readData = async (storeName: string) => {
   } catch (error) {
     return error;
   }
+};
+
+export const getItemFromStore = async (
+  storeName: string,
+  value: string | number
+) => {
+  const db = await dbPromise;
+  const tx = db.transaction(storeName, "readonly");
+  const store = tx.objectStore(storeName);
+  store.get(value);
+  return (tx.oncomplete = () => {});
+};
+
+export const clearStore = async (storeName: string) => {
+  const db = await dbPromise;
+  const tx = db.transaction(storeName, "readwrite");
+  const store = tx.objectStore(storeName);
+  store.clear();
+  return (tx.oncomplete = () => {});
+};
+
+export const removeItemFromStore = async (
+  storeName: string,
+  value: string | number
+) => {
+  const db = await dbPromise;
+  const tx = db.transaction(storeName, "readwrite");
+  const store = tx.objectStore(storeName);
+  store.delete(value);
+  return (tx.oncomplete = () => {});
 };
