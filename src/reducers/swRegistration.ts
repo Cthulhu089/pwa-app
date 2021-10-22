@@ -16,7 +16,6 @@ export const swRegistrationReducer = (
 ) => {
   switch (action.type) {
     case "SET_REGISTRATION":
-      console.log("-1", { ...state, ...action.payload });
       return action.payload;
     case "CLEAR_REGISTRATION":
       return {};

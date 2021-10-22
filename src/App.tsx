@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { connect } from "react-redux";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import { ThemeProvider } from "styled-components/macro";
@@ -10,25 +10,26 @@ import theme from "./theme";
 import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 import { ServiceWorkerProps } from "./utils/types/serviceWorker";
 import { SnackBarProps } from "./utils/types/SnackBarTypes";
-import { setSWRegistrationAction } from "./actions/ServiceWorker/";
 import { setSnackBarAction } from "./actions/Snackbar";
 
 function App(props) {
-  const { setSWRegistration, setSnackBar, snackBar, swRegistration } = props;
+  const { setSnackBar, snackBar } = props;
+  const [registration, setRegistration] = useState<
+    ServiceWorkerProps & ServiceWorkerRegistration
+  >();
 
   useEffect(() => {
     // If you want your app to work offline and load faster, you can change
     // unregister() to register() below. Note this comes with some pitfalls.
     // Learn more about service workers: https://cra.link/PWA
     serviceWorkerRegistration.register({
-      onSuccess: (registration: ServiceWorkerProps) => {
-        setSWRegistration(registration);
+      onSuccess: (registration) => {
+        setRegistration(registration);
       },
-      onUpdate: async (registration: ServiceWorkerProps) => {
+      onUpdate: async (registration) => {
         try {
-          console.log("onUpdate", registration);
-          await setSWRegistration(registration);
-          await setSnackBar({
+          await setRegistration(registration);
+          setSnackBar({
             message: "There is a New Version Available",
             type: "info",
             open: true,
@@ -39,22 +40,29 @@ function App(props) {
         }
       },
     });
-  }, [setSWRegistration, setSnackBar]);
+  }, [setSnackBar]);
 
   const handleOnYes = useCallback(async () => {
     try {
-      await setSnackBar({
-        message: "",
-        type: "",
-        open: false,
-        yesLabel: "",
-      });
-      await swRegistration.waiting.postMessage({ type: "SKIP_WAITING" });
-      window.location.reload();
+      if (!!registration && !!registration.waiting) {
+        await setSnackBar({
+          message: "",
+          type: "",
+          open: false,
+          yesLabel: "",
+        });
+        await registration.waiting.postMessage({ type: "SKIP_WAITING" });
+        window.location.reload();
+      }
     } catch (error) {
-      console.log("error", error);
+      await setSnackBar({
+        message: "Error on service worker registration",
+        type: "error",
+        open: true,
+        yesLabel: "close",
+      });
     }
-  }, [setSnackBar]);
+  }, [registration, setSnackBar]);
 
   const SnackBarRx = useMemo(() => {
     if (!!snackBar && snackBar.open) {
@@ -97,8 +105,6 @@ const mapStateToProps = (state) => {
 };
 
 const mapDispatchToProps = (dispatch) => ({
-  setSWRegistration: (registration: ServiceWorkerProps) =>
-    dispatch(setSWRegistrationAction(registration)),
   setSnackBar: (snackbar: SnackBarProps) =>
     dispatch(setSnackBarAction(snackbar)),
 });

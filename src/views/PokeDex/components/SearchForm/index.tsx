@@ -1,16 +1,15 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useContext } from "react";
 import Loader from "react-loader-spinner";
-import { useSelector } from "react-redux";
 import { Input, Button } from "antd";
 import Row from "../../../../components/Layout/Row";
 import Column from "../../../../components/Layout/Column";
 import { getMethod } from "../../../../utils/methods/GetMethod";
-import { getAllData } from "../../../../utils/IndexDBUtily/";
+import { getAllData } from "../../../../utils/IndexDBUtil";
+import { RegistrationContext } from "../../../../context/Registration/context";
 import {
   PokemonProps,
   EvolveProps,
 } from "../../../../utils/types/PokemonTypes";
-import { ServiceWorkerProps } from "../../../../utils/types/serviceWorker";
 
 type SearchFormProps = {
   handleOnSearchPokemon: (
@@ -19,14 +18,10 @@ type SearchFormProps = {
   ) => void;
 };
 
-type SelectorProps = {
-  swRegistration: ServiceWorkerProps;
-};
-
 const SearchForm = ({ handleOnSearchPokemon }: SearchFormProps) => {
   const [showLoader, setShowLoader] = useState<boolean>(false);
   const [search, setSearch] = useState<string>("");
-  const swRegistration = useSelector((state) => state);
+  const regist = useContext(RegistrationContext);
 
   const getPokemon = useCallback(
     async (pokemonName) => {
@@ -52,13 +47,11 @@ const SearchForm = ({ handleOnSearchPokemon }: SearchFormProps) => {
   }, []);
 
   const handleOnSearch = useCallback(async () => {
-    const indexedPokemons = await getAllData("pokemon");
+    const indexedPokemons = await getAllData("pokemon", "pokemon", "name");
     if (!!search && search !== "") {
       getPokemon(search);
     }
   }, [search, getPokemon]);
-
-  console.log("swRegistration1", swRegistration);
 
   return (
     <Row pt={3}>

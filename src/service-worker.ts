@@ -13,7 +13,7 @@ import { ExpirationPlugin } from "workbox-expiration";
 import { precacheAndRoute, createHandlerBoundToURL } from "workbox-precaching";
 import { registerRoute } from "workbox-routing";
 import { StaleWhileRevalidate } from "workbox-strategies";
-import { writeData } from "./utils/IndexDBUtily";
+import { writeData } from "./utils/IndexDBUtil";
 declare const self: ServiceWorkerGlobalScope;
 
 clientsClaim();
@@ -93,7 +93,7 @@ self.addEventListener("fetch", async (event) => {
       const response = await fetch(event.request.clone());
       const cloneRes = response.clone();
       const data = await cloneRes.json();
-      await writeData("pokemon", data);
+      await writeData("pokemon", data, "pokemon", "name");
       return response;
     } catch (error) {
       return error;
