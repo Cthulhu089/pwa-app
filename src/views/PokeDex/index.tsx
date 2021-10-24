@@ -1,13 +1,14 @@
-import { useCallback, useState, useEffect } from "react";
-import SnackBar from "my-react-snackbar";
+import { useCallback, useState, useEffect, useMemo } from "react";
+import { connect, useDispatch } from "react-redux";
 import styled from "styled-components/macro";
 import Row from "../../components/Layout/Row";
 import Container from "../../components/Layout/Container";
 import EvolutionLine from "./components/EvolutionLine";
 import PokemonDescription from "./components/PokemonDescription";
 import SearchForm from "./components/SearchForm";
-import { PokemonProps, EvolveProps } from "../../utils/types/PokemonTypes";
-import { getRegistration } from "../../utils/SW";
+import { EvolveProps } from "../../utils/types/PokemonTypes";
+import { getAllData, clearStore } from "../../utils/IndexDBUtil";
+import { setPokemonAction } from "../../actions/pokemon";
 
 const PokeDexContainer = styled(Container)`
   display: flex;
@@ -15,62 +16,62 @@ const PokeDexContainer = styled(Container)`
   align-items: center;
 `;
 
-const PokeDex = () => {
-  const [pokemon, setPokemon] = useState<PokemonProps>();
+const PokeDex = (props) => {
+  const { pokemon } = props;
   const [evolveLine, setEvolveLine] = useState<EvolveProps>();
-  const [showSnackbar, setShowSnackbar] = useState<boolean>(false);
-  const [registration, setRegistration] = useState<any>();
-
-  const handleRegistration = useCallback(async () => {
-    const sw = await getRegistration();
-    setRegistration(sw);
-  }, []);
-
-  useEffect(() => {
-    handleRegistration();
-  }, [handleRegistration]);
-
-  const handleOnYes = useCallback(async () => {
-    setShowSnackbar(false);
-  }, []);
-
-  const handleOnSearchPokemon = useCallback((pokemon, evolutionLine) => {
-    setPokemon(pokemon);
+  const dispatch = useDispatch();
+  const handleOnSearchPokemon = useCallback((evolutionLine) => {
     setEvolveLine(evolutionLine);
   }, []);
+
+  const getDataFromStore = useCallback(async () => {
+    const data: any = await getAllData("pokemon", "pokemon", "name");
+    await dispatch(setPokemonAction(data[0]));
+    await clearStore("pokemon", "pokemon", "name");
+  }, [dispatch]);
+
+  useEffect(() => {
+    getDataFromStore();
+  }, [getDataFromStore]);
+  console.log("pokemon", pokemon);
+
+  const PokemonInfo = useMemo(
+    () => (
+      <>
+        {pokemon.name !== "" && (
+          <Row>
+            <PokemonDescription
+              name={pokemon.name}
+              description={""}
+              sprite={pokemon.sprites.front_default}
+              abilities={pokemon.abilities.map(({ ability: { name } }) => name)}
+              types={pokemon.types.map(({ type: { name } }) => name)}
+            />
+          </Row>
+        )}
+        {pokemon.name !== "" && !!evolveLine ? (
+          <Row>
+            <EvolutionLine evolveLine={evolveLine} name={pokemon.name} />
+          </Row>
+        ) : null}
+      </>
+    ),
+    [evolveLine, pokemon]
+  );
 
   return (
     <PokeDexContainer flexDirection={["row", null, null, "column"]} pt={50}>
       <Row>
         <img src={"/Pokedex_logo.png"} alt="pokeDex" />
       </Row>
-      <SnackBar
-        open={showSnackbar}
-        message={"The pokemon is not on your zone"}
-        position="top-center"
-        type="error"
-        yesLabel="ok"
-        onYes={handleOnYes}
-      />
       <SearchForm handleOnSearchPokemon={handleOnSearchPokemon} />
-      {!!pokemon && (
-        <Row>
-          <PokemonDescription
-            name={pokemon.name}
-            description={""}
-            sprite={pokemon.sprites.front_default}
-            abilities={pokemon.abilities.map(({ ability: { name } }) => name)}
-            types={pokemon.types.map(({ type: { name } }) => name)}
-          />
-        </Row>
-      )}
-      {!!pokemon && !!evolveLine ? (
-        <Row>
-          <EvolutionLine evolveLine={evolveLine} name={pokemon.name} />
-        </Row>
-      ) : null}
+      {PokemonInfo}
     </PokeDexContainer>
   );
 };
 
-export default PokeDex;
+const mapStateToProps = (state) => {
+  return state;
+};
+
+export default connect(mapStateToProps, null)(PokeDex);

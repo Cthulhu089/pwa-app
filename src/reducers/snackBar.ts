@@ -2,7 +2,7 @@ import { SnackBarProps } from "../utils/types/SnackBarTypes";
 
 type ActionProps = {
   type: "SHOW_SNACKBAR" | "HIDE_SNACKBAR";
-  payload: SnackBarProps;
+  payload?: SnackBarProps;
 };
 
 const initialState: SnackBarProps = {

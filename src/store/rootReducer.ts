@@ -1,8 +1,9 @@
+//TODO CONFIGURE redux typescript
 import { combineReducers } from "redux";
-import { swRegistrationReducer } from "../reducers/swRegistration";
 import { SnackBarReducer } from "../reducers/snackBar";
+import { pokemonReducer } from "../reducers/pokemon";
 
 export default combineReducers({
   snackBar: SnackBarReducer,
-  SW: swRegistrationReducer,
+  pokemon: pokemonReducer,
 });

@@ -13,7 +13,12 @@ import { ExpirationPlugin } from "workbox-expiration";
 import { precacheAndRoute, createHandlerBoundToURL } from "workbox-precaching";
 import { registerRoute } from "workbox-routing";
 import { StaleWhileRevalidate } from "workbox-strategies";
-import { writeData } from "./utils/IndexDBUtil";
+import {
+  getAllData,
+  removeItemFromStore,
+  writeData,
+} from "./utils/IndexDBUtil";
+import { getMethod } from "./utils/methods/GetMethod";
 declare const self: ServiceWorkerGlobalScope;
 
 clientsClaim();
@@ -97,6 +102,37 @@ self.addEventListener("fetch", async (event) => {
       return response;
     } catch (error) {
       return error;
+    }
+  }
+});
+
+self.addEventListener("sync", (event) => {
+  console.log("BACKGROUND SYNC", event);
+  if (event.tag === "sync-pokeSearch") {
+    console.log("Sync pokesearch");
+    const handleSync = async () => {
+      try {
+        //TODO FIX ANY TO DataSyncPokemonProps [];
+        const data: any = await getAllData("sync-data", "sync-data", "name");
+        const pokemon = await getMethod(
+          `https://pokeapi.co/api/v2/pokemon/${data[0].name}`
+        );
+        removeItemFromStore(
+          "sync-pokeSearch",
+          data[0].name,
+          "sync-pokeSearch",
+          "name"
+        );
+        removeItemFromStore("sync-data", data[0].name, "sync-data", "name");
+        await writeData("pokemon", pokemon, "pokemon", "name");
+      } catch (error) {
+        console.log("error", error);
+      }
+    };
+    try {
+      event.waitUntil(handleSync());
+    } catch (error) {
+      console.log("error", error);
     }
   }
 });

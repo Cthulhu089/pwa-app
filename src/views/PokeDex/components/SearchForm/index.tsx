@@ -1,27 +1,34 @@
-import { useState, useCallback, useContext } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Loader from "react-loader-spinner";
 import { Input, Button } from "antd";
+import { useDispatch } from "react-redux";
 import Row from "../../../../components/Layout/Row";
 import Column from "../../../../components/Layout/Column";
 import { getMethod } from "../../../../utils/methods/GetMethod";
-import { getAllData } from "../../../../utils/IndexDBUtil";
-import { RegistrationContext } from "../../../../context/Registration/context";
-import {
-  PokemonProps,
-  EvolveProps,
-} from "../../../../utils/types/PokemonTypes";
+import { clearStore, writeData } from "../../../../utils/IndexDBUtil";
+import { EvolveProps } from "../../../../utils/types/PokemonTypes";
+import { getRegistration } from "../../../../utils/SW";
+import { setSnackBarAction } from "../../../../actions/Snackbar";
+import { setPokemonAction } from "../../../../actions/pokemon";
 
 type SearchFormProps = {
-  handleOnSearchPokemon: (
-    pokemon: PokemonProps,
-    evolutionChain: EvolveProps
-  ) => void;
+  handleOnSearchPokemon: (evolutionChain: EvolveProps) => void;
 };
 
 const SearchForm = ({ handleOnSearchPokemon }: SearchFormProps) => {
   const [showLoader, setShowLoader] = useState<boolean>(false);
   const [search, setSearch] = useState<string>("");
-  const regist = useContext(RegistrationContext);
+  const [sw, setSw] = useState<any>();
+  const dispatch = useDispatch();
+
+  const handleRegistration = useCallback(async () => {
+    const sw: any = await getRegistration();
+    setSw(sw);
+  }, []);
+
+  useEffect(() => {
+    handleRegistration();
+  }, [handleRegistration]);
 
   const getPokemon = useCallback(
     async (pokemonName) => {
@@ -32,14 +39,24 @@ const SearchForm = ({ handleOnSearchPokemon }: SearchFormProps) => {
         );
         const specie = await getMethod(pokemon.species.url);
         const evolutionLine = await getMethod(specie.evolution_chain.url);
-        handleOnSearchPokemon(pokemon, evolutionLine.chain.evolves_to[0]);
+        await dispatch(setPokemonAction(pokemon));
+        handleOnSearchPokemon(evolutionLine.chain.evolves_to[0]);
         setShowLoader(false);
       } catch (error) {
+        dispatch(
+          setSnackBarAction({
+            message: "Pokemon not in your zone",
+            type: "error",
+            open: true,
+            closeOnClick: false,
+            yesLabel: "Ok",
+          })
+        );
         setShowLoader(false);
         return error;
       }
     },
-    [handleOnSearchPokemon]
+    [handleOnSearchPokemon, dispatch]
   );
 
   const handleOnChangeSearch = useCallback((e) => {
@@ -47,11 +64,34 @@ const SearchForm = ({ handleOnSearchPokemon }: SearchFormProps) => {
   }, []);
 
   const handleOnSearch = useCallback(async () => {
-    const indexedPokemons = await getAllData("pokemon", "pokemon", "name");
-    if (!!search && search !== "") {
-      getPokemon(search);
+    try {
+      await clearStore("pokemon", "pokemon", "name");
+
+      if (!!search && search !== "") {
+        const data = {
+          name: search,
+        };
+
+        if (!navigator.onLine) {
+          await writeData("sync-data", data, "sync-data", "name");
+          await sw.sync.register("sync-pokeSearch");
+          dispatch(
+            setSnackBarAction({
+              message: "Your Request is saved",
+              type: "info",
+              open: true,
+              closeOnClick: false,
+              yesLabel: "OK",
+            })
+          );
+        } else {
+          getPokemon(search);
+        }
+      }
+    } catch (error) {
+      return error;
     }
-  }, [search, getPokemon]);
+  }, [search, getPokemon, sw, dispatch]);
 
   return (
     <Row pt={3}>
