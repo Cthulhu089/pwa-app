@@ -48,7 +48,7 @@ const SearchForm = ({ handleOnSearchPokemon }: SearchFormProps) => {
             message: "Pokemon not in your zone",
             type: "error",
             open: true,
-            closeOnClick: false,
+            closeOnClick: true,
             yesLabel: "Ok",
           })
         );
@@ -66,7 +66,6 @@ const SearchForm = ({ handleOnSearchPokemon }: SearchFormProps) => {
   const handleOnSearch = useCallback(async () => {
     try {
       await clearStore("pokemon", "pokemon", "name");
-
       if (!!search && search !== "") {
         const data = {
           name: search,
@@ -80,7 +79,6 @@ const SearchForm = ({ handleOnSearchPokemon }: SearchFormProps) => {
               message: "Your Request is saved",
               type: "info",
               open: true,
-              closeOnClick: false,
               yesLabel: "OK",
             })
           );

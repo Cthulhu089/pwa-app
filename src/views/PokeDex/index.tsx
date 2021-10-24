@@ -9,6 +9,7 @@ import SearchForm from "./components/SearchForm";
 import { EvolveProps } from "../../utils/types/PokemonTypes";
 import { getAllData, clearStore } from "../../utils/IndexDBUtil";
 import { setPokemonAction } from "../../actions/pokemon";
+import { getMethod } from "../../utils/methods/GetMethod";
 
 const PokeDexContainer = styled(Container)`
   display: flex;
@@ -25,15 +26,24 @@ const PokeDex = (props) => {
   }, []);
 
   const getDataFromStore = useCallback(async () => {
-    const data: any = await getAllData("pokemon", "pokemon", "name");
-    await dispatch(setPokemonAction(data[0]));
-    await clearStore("pokemon", "pokemon", "name");
+    try {
+      const data: any = await getAllData("pokemon", "pokemon", "name");
+      if (!!data[0]) {
+        const specie = data[0].species.url;
+        await dispatch(setPokemonAction(data[0]));
+        const species = await getMethod(specie);
+        const evolutionLine = await getMethod(species.evolution_chain.url);
+        await setEvolveLine(evolutionLine.chain.evolves_to[0]);
+        await clearStore("pokemon", "pokemon", "name");
+      }
+    } catch (error) {
+      return error;
+    }
   }, [dispatch]);
 
   useEffect(() => {
     getDataFromStore();
   }, [getDataFromStore]);
-  console.log("pokemon", pokemon);
 
   const PokemonInfo = useMemo(
     () => (
@@ -49,6 +59,14 @@ const PokeDex = (props) => {
             />
           </Row>
         )}
+      </>
+    ),
+    [pokemon]
+  );
+
+  const Evolution = useMemo(
+    () => (
+      <>
         {pokemon.name !== "" && !!evolveLine ? (
           <Row>
             <EvolutionLine evolveLine={evolveLine} name={pokemon.name} />
@@ -56,7 +74,7 @@ const PokeDex = (props) => {
         ) : null}
       </>
     ),
-    [evolveLine, pokemon]
+    [pokemon, evolveLine]
   );
 
   return (
@@ -66,6 +84,7 @@ const PokeDex = (props) => {
       </Row>
       <SearchForm handleOnSearchPokemon={handleOnSearchPokemon} />
       {PokemonInfo}
+      {Evolution}
     </PokeDexContainer>
   );
 };

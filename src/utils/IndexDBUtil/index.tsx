@@ -54,11 +54,15 @@ export const getItemFromStore = async (
   dbName: string,
   keyPath: string
 ) => {
-  const db = await createDBPromise(dbName, keyPath);
-  const tx = db?.transaction(storeName, "readonly");
-  const store = tx?.objectStore(storeName);
-  store?.get(value);
-  return !!tx && (tx.oncomplete = () => {});
+  try {
+    const db = await createDBPromise(dbName, keyPath);
+    const tx = db?.transaction(storeName, "readonly");
+    const store = tx?.objectStore(storeName);
+    store?.get(value);
+    return !!tx && (tx.oncomplete = () => {});
+  } catch (error) {
+    return error;
+  }
 };
 
 export const clearStore = async (
@@ -66,11 +70,15 @@ export const clearStore = async (
   dbName: string,
   keyPath: string
 ) => {
-  const db = await createDBPromise(dbName, keyPath);
-  const tx = db?.transaction(storeName, "readwrite");
-  const store = tx?.objectStore(storeName);
-  store?.clear();
-  return !!tx && (tx.oncomplete = () => {});
+  try {
+    const db = await createDBPromise(dbName, keyPath);
+    const tx = db?.transaction(storeName, "readwrite");
+    const store = tx?.objectStore(storeName);
+    store?.clear();
+    return !!tx && (tx.oncomplete = () => {});
+  } catch (error) {
+    return error;
+  }
 };
 
 export const removeItemFromStore = async (
@@ -79,9 +87,13 @@ export const removeItemFromStore = async (
   dbName: string,
   keyPath: string
 ) => {
-  const db = await createDBPromise(dbName, keyPath);
-  const tx = db?.transaction(storeName, "readwrite");
-  const store = tx?.objectStore(storeName);
-  store?.delete(value);
-  return !!tx && (tx.oncomplete = () => {});
+  try {
+    const db = await createDBPromise(dbName, keyPath);
+    const tx = db?.transaction(storeName, "readwrite");
+    const store = tx?.objectStore(storeName);
+    store?.delete(value);
+    return !!tx && (tx.oncomplete = () => {});
+  } catch (error) {
+    return error;
+  }
 };

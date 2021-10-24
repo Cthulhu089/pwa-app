@@ -93,23 +93,21 @@ self.addEventListener("fetch", async (event) => {
     //Do somethinf
   }
 
-  if (event.request.url.includes("/pokemon/")) {
-    try {
-      const response = await fetch(event.request.clone());
-      const cloneRes = response.clone();
-      const data = await cloneRes.json();
-      await writeData("pokemon", data, "pokemon", "name");
-      return response;
-    } catch (error) {
-      return error;
-    }
-  }
+  // if (event.request.url.includes("/pokemon/")) {
+  //   try {
+  //     const response = await fetch(event.request.clone());
+  //     const cloneRes = response.clone();
+  //     const data = await cloneRes.json();
+  //     await writeData("pokemon", data, "pokemon", "name");
+  //     return response;
+  //   } catch (error) {
+  //     return error;
+  //   }
+  // }
 });
 
 self.addEventListener("sync", (event) => {
-  console.log("BACKGROUND SYNC", event);
   if (event.tag === "sync-pokeSearch") {
-    console.log("Sync pokesearch");
     const handleSync = async () => {
       try {
         //TODO FIX ANY TO DataSyncPokemonProps [];
@@ -126,13 +124,13 @@ self.addEventListener("sync", (event) => {
         removeItemFromStore("sync-data", data[0].name, "sync-data", "name");
         await writeData("pokemon", pokemon, "pokemon", "name");
       } catch (error) {
-        console.log("error", error);
+        return error;
       }
     };
     try {
       event.waitUntil(handleSync());
     } catch (error) {
-      console.log("error", error);
+      return error;
     }
   }
 });
