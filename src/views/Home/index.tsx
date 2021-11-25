@@ -24,7 +24,7 @@ function Home() {
           Learn React
         </a>
         <Button type="primary" onClick={handleOnClick}>
-          Go to Pokedex
+          Pokedex
         </Button>
       </header>
     </div>

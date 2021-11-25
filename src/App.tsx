@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { connect } from "react-redux";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import { ThemeProvider } from "styled-components/macro";
@@ -9,53 +9,115 @@ import PokeDex from "./views/PokeDex";
 import theme from "./theme";
 import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 import { ServiceWorkerProps } from "./utils/types/serviceWorker";
-import { setSWRegistration } from "./actions/ServiceWorker/";
+import { SnackBarProps } from "./utils/types/SnackBarTypes";
+import { setSnackBarAction } from "./actions/Snackbar";
+import { requestPermissions } from "./utils/Notifications";
+import { getRegistration } from "./utils/SW";
 
 function App(props) {
-  const { SWRegistration } = props;
-  const [showSnackbar, setShowSnackbar] = useState<boolean>(false);
-  const [registration, setRegistration] = useState<ServiceWorkerProps>();
+  const { setSnackBar, snackBar } = props;
+  const [registration, setRegistration] = useState<
+    ServiceWorkerProps & ServiceWorkerRegistration
+  >();
+  const [sw, setSw] = useState<any>();
+  const handleRegistration = useCallback(async () => {
+    const sw: any = await getRegistration();
+    setSw(sw);
+  }, []);
 
   useEffect(() => {
-    // If you want your app to work offline and load faster, you can change
-    // unregister() to register() below. Note this comes with some pitfalls.
-    // Learn more about service workers: https://cra.link/PWA
-    serviceWorkerRegistration.register({
-      onSuccess: (registration: ServiceWorkerProps) => {},
-      onUpdate: (registration: ServiceWorkerProps) => {
-        try {
-          console.log("12321321");
-          SWRegistration(registration);
+    handleRegistration();
+  }, [handleRegistration]);
+
+  useEffect(() => {
+    try {
+      // If you want your app to work offline and load faster, you can change
+      // unregister() to register() below. Note this comes with some pitfalls.
+      // Learn more about service workers: https://cra.link/PWA
+      serviceWorkerRegistration.register({
+        onSuccess: (registration) => {
           setRegistration(registration);
-          setShowSnackbar(true);
-        } catch (error) {
-          console.log("error", error);
-        }
-      },
-    });
-  }, [setSWRegistration]);
+        },
+        onUpdate: async (registration) => {
+          try {
+            await setRegistration(registration);
+            setSnackBar({
+              message: "There is a New Version Available",
+              type: "info",
+              open: true,
+              yesLabel: "Update",
+            });
+          } catch (error) {
+            return error;
+          }
+        },
+      });
+    } catch (error) {}
+  }, [setSnackBar]);
+
+  useEffect(() => {
+    //Notification Request
+
+    if (Notification.permission !== "granted") {
+      setSnackBar({
+        message: "Allow Notification",
+        type: "info",
+        open: true,
+        yesLabel: "Allow",
+        handleOnYes: () => {
+          requestPermissions((result) => {
+            if (result !== "granted") {
+            } else {
+              window.location.reload();
+            }
+          });
+        },
+      });
+    }
+  }, [sw, setSnackBar]);
 
   const handleOnYes = useCallback(async () => {
-    if (!!registration && !!registration.waiting) {
-      await registration.waiting.postMessage({ type: "SKIP_WAITING" });
-      window.location.reload();
-      setShowSnackbar(false);
+    try {
+      await setSnackBar({
+        message: "",
+        type: "",
+        open: false,
+        yesLabel: "",
+      });
+      if (!!registration && !!registration.waiting) {
+        await registration.waiting.postMessage({ type: "SKIP_WAITING" });
+        window.location.reload();
+      }
+    } catch (error) {
+      await setSnackBar({
+        message: "Error on service worker registration",
+        type: "error",
+        open: true,
+        yesLabel: "close",
+      });
     }
-  }, [registration]);
+  }, [registration, setSnackBar]);
+
+  const SnackBarRx = useMemo(() => {
+    if (!!snackBar && snackBar.open) {
+      return (
+        <SnackBar
+          open={snackBar.open}
+          message={snackBar.message}
+          position="top-center"
+          type={snackBar.type}
+          yesLabel={snackBar.yesLabel}
+          onYes={!!snackBar.handleOnYes ? snackBar.handleOnYes : handleOnYes}
+          closeOnClick={snackBar.closeOnClick}
+        />
+      );
+    }
+  }, [handleOnYes, snackBar]);
 
   return (
     <Router>
       <ThemeProvider theme={theme}>
-        <SnackBar
-          open={showSnackbar}
-          message={"There is a New Version Available"}
-          position="top-center"
-          type="info"
-          yesLabel="Update"
-          onYes={handleOnYes}
-          closeOnClick={false}
-        />
-        <SnackBar />
+        {SnackBarRx}
         <Switch>
           <Route path="/home">
             <Home />
@@ -72,9 +134,13 @@ function App(props) {
   );
 }
 
+const mapStateToProps = (state) => {
+  return state;
+};
+
 const mapDispatchToProps = (dispatch) => ({
-  SWRegistration: (registration: ServiceWorkerProps) =>
-    dispatch(setSWRegistration(registration)),
+  setSnackBar: (snackbar: SnackBarProps) =>
+    dispatch(setSnackBarAction(snackbar)),
 });
 
-export default connect(null, mapDispatchToProps)(App);
+export default connect(mapStateToProps, mapDispatchToProps)(App);

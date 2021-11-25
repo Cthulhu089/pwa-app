@@ -5,4 +5,4 @@ type SyncManager = {
 
 export type ServiceWorkerProps = {
   sync: SyncManager;
-} & ServiceWorkerRegistration;
+};

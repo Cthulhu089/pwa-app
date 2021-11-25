@@ -1,15 +1,17 @@
-import { useCallback, useState } from "react";
-import SnackBar from "my-react-snackbar";
-import Loader from "react-loader-spinner";
-import { Input, Button } from "antd";
+import { useCallback, useState, useEffect, useMemo } from "react";
+import { connect, useDispatch } from "react-redux";
 import styled from "styled-components/macro";
 import Row from "../../components/Layout/Row";
-import Column from "../../components/Layout/Column";
 import Container from "../../components/Layout/Container";
 import EvolutionLine from "./components/EvolutionLine";
 import PokemonDescription from "./components/PokemonDescription";
+import SearchForm from "./components/SearchForm";
+import Pokeball from "../../components/Icons/pokeball.svg";
+import { EvolveProps } from "../../utils/types/PokemonTypes";
+import { getAllData, clearStore } from "../../utils/IndexDBUtil";
+import { setPokemonAction } from "../../actions/pokemon";
 import { getMethod } from "../../utils/methods/GetMethod";
-import { PokemonProps, EvolveProps } from "../../utils/types/PokemonTypes";
+import { getRegistration } from "../../utils/SW";
 
 const PokeDexContainer = styled(Container)`
   display: flex;
@@ -17,93 +19,114 @@ const PokeDexContainer = styled(Container)`
   align-items: center;
 `;
 
-const PokeDex = () => {
-  const [pokemon, setPokemon] = useState<PokemonProps>();
-  const [evolveLine, setEvolveLine] = useState<EvolveProps>();
-  const [search, setSearch] = useState<string>("");
-  const [showLoader, setShowLoader] = useState<boolean>(false);
-  const [showSnackbar, setShowSnackbar] = useState<boolean>(false);
+const PokeDex = (props) => {
+  const { pokemon, offlineSearch } = props;
+  const [evolveLine, setEvolveLine] = useState<EvolveProps | null>();
+  const dispatch = useDispatch();
+  const handleOnSearchPokemon = useCallback((evolutionLine) => {
+    setEvolveLine(evolutionLine);
+  }, []);
 
-  const getPokemon = useCallback(async (pokemonName) => {
-    setShowLoader(true);
+  const getDataFromStore = useCallback(async () => {
     try {
-      const pokemon = await getMethod(
-        `https://pokeapi.co/api/v2/pokemon/${pokemonName.toLowerCase()}`
-      );
-      const specie = await getMethod(pokemon.species.url);
-      const evolutionLine = await getMethod(specie.evolution_chain.url);
-      await setPokemon(pokemon);
-      setEvolveLine(evolutionLine.chain.evolves_to[0]);
-      setShowLoader(false);
+      const data: any = await getAllData("pokemon", "pokemon", "name");
+      if (!!data[0]) {
+        const specie = data[0].species.url;
+        await dispatch(setPokemonAction(data[0]));
+        const species = await getMethod(specie);
+        const evolutionLine = await getMethod(species.evolution_chain.url);
+        await setEvolveLine(evolutionLine.chain.evolves_to[0]);
+        await clearStore("pokemon", "pokemon", "name");
+      }
     } catch (error) {
-      setShowLoader(false);
-      setShowSnackbar(true);
+      return error;
     }
-  }, []);
+  }, [dispatch]);
 
-  const handleOnChangeSearch = useCallback((e) => {
-    setSearch(e.target.value);
-  }, []);
+  useEffect(() => {
+    getDataFromStore();
+  }, [getDataFromStore]);
 
-  const handleOnSearch = useCallback(() => {
-    if (!!search && search !== "") {
-      getPokemon(search);
-    }
-  }, [search, getPokemon]);
+  useEffect(() => {
+    window.addEventListener("offline", async (e) => {
+      try {
+        const sw: any = await getRegistration();
+        const options = {
+          body: "You are offline your request will be executed once you are online",
+          icon: Pokeball,
+          actions: [{ action: "confirm", title: "Okay" }],
+        };
+        sw.showNotification("Pokedex", options);
+      } catch (error) {
+        console.log("error", error);
+      }
+    });
 
-  const handleOnYes = useCallback(async () => {
-    setShowSnackbar(false);
-  }, []);
+    window.addEventListener("online", async (e) => {
+      try {
+        console.log("offlineSearch.name", offlineSearch.name);
+
+        if (offlineSearch.name !== "") {
+          const sw: any = await getRegistration();
+          const options = {
+            body: "You are back online please refresh to get you result",
+            icon: Pokeball,
+            actions: [{ action: "confirm", title: "Okay" }],
+          };
+          sw.showNotification("Pokedex", options);
+        }
+      } catch (error) {
+        console.log("onlne");
+      }
+    });
+  }, [offlineSearch]);
+
+  const PokemonInfo = useMemo(
+    () => (
+      <>
+        {pokemon.name !== "" && (
+          <Row>
+            <PokemonDescription
+              name={pokemon.name}
+              description={""}
+              sprite={pokemon.sprites.front_default}
+              abilities={pokemon.abilities.map(({ ability: { name } }) => name)}
+              types={pokemon.types.map(({ type: { name } }) => name)}
+            />
+          </Row>
+        )}
+      </>
+    ),
+    [pokemon]
+  );
+
+  const Evolution = useMemo(
+    () => (
+      <>
+        {pokemon.name !== "" && !!evolveLine ? (
+          <Row>
+            <EvolutionLine evolveLine={evolveLine} name={pokemon.name} />
+          </Row>
+        ) : null}
+      </>
+    ),
+    [pokemon, evolveLine]
+  );
 
   return (
     <PokeDexContainer flexDirection={["row", null, null, "column"]} pt={50}>
       <Row>
         <img src={"/Pokedex_logo.png"} alt="pokeDex" />
       </Row>
-      <SnackBar
-        open={showSnackbar}
-        message={"The pokemon is not on your zone"}
-        position="top-center"
-        type="error"
-        yesLabel="ok"
-        onYes={handleOnYes}
-      />
-      <Row pt={3}>
-        {showLoader && (
-          <Loader type="TailSpin" color="#00BFFF" height={30} width={40} />
-        )}
-        <Column></Column>
-        <Column>
-          <Input
-            placeholder="Search your pokemon"
-            value={search}
-            onChange={handleOnChangeSearch}
-          />
-        </Column>
-        <Column>
-          <Button onClick={handleOnSearch} type="primary">
-            Search
-          </Button>
-        </Column>
-      </Row>
-      {!!pokemon && (
-        <Row>
-          <PokemonDescription
-            name={pokemon.name}
-            description={""}
-            sprite={pokemon.sprites.front_default}
-            abilities={pokemon.abilities.map(({ ability: { name } }) => name)}
-            types={pokemon.types.map(({ type: { name } }) => name)}
-          />
-        </Row>
-      )}
-      {!!pokemon && !!evolveLine ? (
-        <Row>
-          <EvolutionLine evolveLine={evolveLine} name={pokemon.name} />
-        </Row>
-      ) : null}
+      <SearchForm handleOnSearchPokemon={handleOnSearchPokemon} />
+      {PokemonInfo}
+      {Evolution}
     </PokeDexContainer>
   );
 };
 
-export default PokeDex;
+const mapStateToProps = (state) => {
+  return state;
+};
+
+export default connect(mapStateToProps, null)(PokeDex);

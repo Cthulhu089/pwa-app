@@ -13,7 +13,12 @@ import { ExpirationPlugin } from "workbox-expiration";
 import { precacheAndRoute, createHandlerBoundToURL } from "workbox-precaching";
 import { registerRoute } from "workbox-routing";
 import { StaleWhileRevalidate } from "workbox-strategies";
-import { writeData } from "./utils/IndexDBUtily";
+import {
+  getAllData,
+  removeItemFromStore,
+  writeData,
+} from "./utils/IndexDBUtil";
+import { getMethod } from "./utils/methods/GetMethod";
 declare const self: ServiceWorkerGlobalScope;
 
 clientsClaim();
@@ -88,15 +93,53 @@ self.addEventListener("fetch", async (event) => {
     //Do somethinf
   }
 
-  if (event.request.url.includes("/pokemon/")) {
+  // if (event.request.url.includes("/pokemon/")) {
+  //   try {
+  //     const response = await fetch(event.request.clone());
+  //     const cloneRes = response.clone();
+  //     const data = await cloneRes.json();
+  //     await writeData("pokemon", data, "pokemon", "name");
+  //     return response;
+  //   } catch (error) {
+  //     return error;
+  //   }
+  // }
+});
+
+self.addEventListener("sync", (event) => {
+  if (event.tag === "sync-pokeSearch") {
+    const handleSync = async () => {
+      try {
+        //TODO FIX ANY TO DataSyncPokemonProps [];
+        const data: any = await getAllData("sync-data", "sync-data", "name");
+        const pokemon = await getMethod(
+          `https://pokeapi.co/api/v2/pokemon/${data[0].name.toLowerCase()}`
+        );
+        removeItemFromStore(
+          "sync-pokeSearch",
+          data[0].name,
+          "sync-pokeSearch",
+          "name"
+        );
+        removeItemFromStore("sync-data", data[0].name, "sync-data", "name");
+        await writeData("pokemon", pokemon, "pokemon", "name");
+      } catch (error) {
+        return error;
+      }
+    };
     try {
-      const response = await fetch(event.request.clone());
-      const cloneRes = response.clone();
-      const data = await cloneRes.json();
-      await writeData("gets", data);
-      return response;
+      event.waitUntil(handleSync());
     } catch (error) {
       return error;
     }
+  }
+});
+
+self.addEventListener("notificationclick", (event) => {
+  const notification = event.notification;
+  const action = event.action;
+
+  if (action === "confirm") {
+    notification.close();
   }
 });

@@ -22,40 +22,48 @@ const EvolutionLine = ({ evolveLine, name }: EvolutionLineProps) => {
   const [evolutionChain, setEvolutionChain] = useState<EvolutionProps[]>();
 
   const createEvolutionLine = useCallback(async (evolutionNames) => {
-    let evolutionLine: EvolutionProps[] = [];
-    evolutionLine = await Promise.all(
-      await evolutionNames.map(async (pokemonName) => {
-        const pokemon: PokemonProps = await getMethod(
-          `https://pokeapi.co/api/v2/pokemon/${pokemonName.toLowerCase()}`
-        );
-        return {
-          name: pokemon.name,
-          sprite: pokemon.sprites.front_default,
-        };
-      })
-    );
-    setEvolutionChain(evolutionLine);
+    try {
+      let evolutionLine: EvolutionProps[] = [];
+      evolutionLine = await Promise.all(
+        await evolutionNames.map(async (pokemonName) => {
+          const pokemon: PokemonProps = await getMethod(
+            `https://pokeapi.co/api/v2/pokemon/${pokemonName.toLowerCase()}`
+          );
+          return {
+            name: pokemon.name,
+            sprite: pokemon.sprites.front_default,
+          };
+        })
+      );
+      setEvolutionChain(evolutionLine);
+    } catch (error) {
+      return error;
+    }
   }, []);
 
   const setEvolutionLine = useCallback(
     (evolveLine, pokemonName) => {
-      let evolutionNames: string[] = [];
-      const {
-        species: { name },
-        evolves_to,
-      } = evolveLine;
+      try {
+        let evolutionNames: string[] = [];
+        const {
+          species: { name },
+          evolves_to,
+        } = evolveLine;
 
-      if (name !== pokemonName) {
-        evolutionNames.push(name);
-      }
-
-      evolves_to.forEach(({ species: { name } }) => {
         if (name !== pokemonName) {
           evolutionNames.push(name);
         }
-      });
 
-      createEvolutionLine(evolutionNames);
+        evolves_to.forEach(({ species: { name } }) => {
+          if (name !== pokemonName) {
+            evolutionNames.push(name);
+          }
+        });
+
+        createEvolutionLine(evolutionNames);
+      } catch (error) {
+        return error;
+      }
     },
     [createEvolutionLine]
   );
