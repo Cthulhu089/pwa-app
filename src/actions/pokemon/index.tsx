@@ -4,3 +4,9 @@ export const setPokemonAction = (pokemon) => async (dispatch) => {
     payload: pokemon,
   });
 };
+
+export const clearPokemonAction = () => async (dispatch) => {
+  await dispatch({
+    type: "CLEAR_POKEMON",
+  });
+};

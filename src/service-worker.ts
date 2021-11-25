@@ -113,7 +113,7 @@ self.addEventListener("sync", (event) => {
         //TODO FIX ANY TO DataSyncPokemonProps [];
         const data: any = await getAllData("sync-data", "sync-data", "name");
         const pokemon = await getMethod(
-          `https://pokeapi.co/api/v2/pokemon/${data[0].name}`
+          `https://pokeapi.co/api/v2/pokemon/${data[0].name.toLowerCase()}`
         );
         removeItemFromStore(
           "sync-pokeSearch",
@@ -132,5 +132,14 @@ self.addEventListener("sync", (event) => {
     } catch (error) {
       return error;
     }
+  }
+});
+
+self.addEventListener("notificationclick", (event) => {
+  const notification = event.notification;
+  const action = event.action;
+
+  if (action === "confirm") {
+    notification.close();
   }
 });

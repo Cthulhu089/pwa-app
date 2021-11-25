@@ -6,10 +6,12 @@ import Container from "../../components/Layout/Container";
 import EvolutionLine from "./components/EvolutionLine";
 import PokemonDescription from "./components/PokemonDescription";
 import SearchForm from "./components/SearchForm";
+import Pokeball from "../../components/Icons/pokeball.svg";
 import { EvolveProps } from "../../utils/types/PokemonTypes";
 import { getAllData, clearStore } from "../../utils/IndexDBUtil";
 import { setPokemonAction } from "../../actions/pokemon";
 import { getMethod } from "../../utils/methods/GetMethod";
+import { getRegistration } from "../../utils/SW";
 
 const PokeDexContainer = styled(Container)`
   display: flex;
@@ -18,8 +20,8 @@ const PokeDexContainer = styled(Container)`
 `;
 
 const PokeDex = (props) => {
-  const { pokemon } = props;
-  const [evolveLine, setEvolveLine] = useState<EvolveProps>();
+  const { pokemon, offlineSearch } = props;
+  const [evolveLine, setEvolveLine] = useState<EvolveProps | null>();
   const dispatch = useDispatch();
   const handleOnSearchPokemon = useCallback((evolutionLine) => {
     setEvolveLine(evolutionLine);
@@ -44,6 +46,40 @@ const PokeDex = (props) => {
   useEffect(() => {
     getDataFromStore();
   }, [getDataFromStore]);
+
+  useEffect(() => {
+    window.addEventListener("offline", async (e) => {
+      try {
+        const sw: any = await getRegistration();
+        const options = {
+          body: "You are offline your request will be executed once you are online",
+          icon: Pokeball,
+          actions: [{ action: "confirm", title: "Okay" }],
+        };
+        sw.showNotification("Pokedex", options);
+      } catch (error) {
+        console.log("error", error);
+      }
+    });
+
+    window.addEventListener("online", async (e) => {
+      try {
+        console.log("offlineSearch.name", offlineSearch.name);
+
+        if (offlineSearch.name !== "") {
+          const sw: any = await getRegistration();
+          const options = {
+            body: "You are back online please refresh to get you result",
+            icon: Pokeball,
+            actions: [{ action: "confirm", title: "Okay" }],
+          };
+          sw.showNotification("Pokedex", options);
+        }
+      } catch (error) {
+        console.log("onlne");
+      }
+    });
+  }, [offlineSearch]);
 
   const PokemonInfo = useMemo(
     () => (

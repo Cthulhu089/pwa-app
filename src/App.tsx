@@ -11,46 +11,80 @@ import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 import { ServiceWorkerProps } from "./utils/types/serviceWorker";
 import { SnackBarProps } from "./utils/types/SnackBarTypes";
 import { setSnackBarAction } from "./actions/Snackbar";
+import { requestPermissions } from "./utils/Notifications";
+import { getRegistration } from "./utils/SW";
 
 function App(props) {
   const { setSnackBar, snackBar } = props;
   const [registration, setRegistration] = useState<
     ServiceWorkerProps & ServiceWorkerRegistration
   >();
+  const [sw, setSw] = useState<any>();
+  const handleRegistration = useCallback(async () => {
+    const sw: any = await getRegistration();
+    setSw(sw);
+  }, []);
 
   useEffect(() => {
-    // If you want your app to work offline and load faster, you can change
-    // unregister() to register() below. Note this comes with some pitfalls.
-    // Learn more about service workers: https://cra.link/PWA
-    serviceWorkerRegistration.register({
-      onSuccess: (registration) => {
-        setRegistration(registration);
-      },
-      onUpdate: async (registration) => {
-        try {
-          await setRegistration(registration);
-          setSnackBar({
-            message: "There is a New Version Available",
-            type: "info",
-            open: true,
-            yesLabel: "Update",
-          });
-        } catch (error) {
-          return error;
-        }
-      },
-    });
+    handleRegistration();
+  }, [handleRegistration]);
+
+  useEffect(() => {
+    try {
+      // If you want your app to work offline and load faster, you can change
+      // unregister() to register() below. Note this comes with some pitfalls.
+      // Learn more about service workers: https://cra.link/PWA
+      serviceWorkerRegistration.register({
+        onSuccess: (registration) => {
+          setRegistration(registration);
+        },
+        onUpdate: async (registration) => {
+          try {
+            await setRegistration(registration);
+            setSnackBar({
+              message: "There is a New Version Available",
+              type: "info",
+              open: true,
+              yesLabel: "Update",
+            });
+          } catch (error) {
+            return error;
+          }
+        },
+      });
+    } catch (error) {}
   }, [setSnackBar]);
+
+  useEffect(() => {
+    //Notification Request
+
+    if (Notification.permission !== "granted") {
+      setSnackBar({
+        message: "Allow Notification",
+        type: "info",
+        open: true,
+        yesLabel: "Allow",
+        handleOnYes: () => {
+          requestPermissions((result) => {
+            if (result !== "granted") {
+            } else {
+              window.location.reload();
+            }
+          });
+        },
+      });
+    }
+  }, [sw, setSnackBar]);
 
   const handleOnYes = useCallback(async () => {
     try {
+      await setSnackBar({
+        message: "",
+        type: "",
+        open: false,
+        yesLabel: "",
+      });
       if (!!registration && !!registration.waiting) {
-        await setSnackBar({
-          message: "",
-          type: "",
-          open: false,
-          yesLabel: "",
-        });
         await registration.waiting.postMessage({ type: "SKIP_WAITING" });
         window.location.reload();
       }
@@ -73,7 +107,7 @@ function App(props) {
           position="top-center"
           type={snackBar.type}
           yesLabel={snackBar.yesLabel}
-          onYes={handleOnYes}
+          onYes={!!snackBar.handleOnYes ? snackBar.handleOnYes : handleOnYes}
           closeOnClick={snackBar.closeOnClick}
         />
       );

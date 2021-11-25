@@ -9,10 +9,17 @@ import { clearStore, writeData } from "../../../../utils/IndexDBUtil";
 import { EvolveProps } from "../../../../utils/types/PokemonTypes";
 import { getRegistration } from "../../../../utils/SW";
 import { setSnackBarAction } from "../../../../actions/Snackbar";
-import { setPokemonAction } from "../../../../actions/pokemon";
+import {
+  setSearchAction,
+  clearSearchAction,
+} from "../../../../actions/offlineSearch";
+import {
+  setPokemonAction,
+  clearPokemonAction,
+} from "../../../../actions/pokemon";
 
 type SearchFormProps = {
-  handleOnSearchPokemon: (evolutionChain: EvolveProps) => void;
+  handleOnSearchPokemon: (evolutionChain: EvolveProps | null) => void;
 };
 
 const SearchForm = ({ handleOnSearchPokemon }: SearchFormProps) => {
@@ -48,7 +55,6 @@ const SearchForm = ({ handleOnSearchPokemon }: SearchFormProps) => {
             message: "Pokemon not in your zone",
             type: "error",
             open: true,
-            closeOnClick: true,
             yesLabel: "Ok",
           })
         );
@@ -65,7 +71,12 @@ const SearchForm = ({ handleOnSearchPokemon }: SearchFormProps) => {
 
   const handleOnSearch = useCallback(async () => {
     try {
+      await handleOnSearchPokemon(null);
+      await dispatch(clearPokemonAction());
+      await dispatch(clearSearchAction());
       await clearStore("pokemon", "pokemon", "name");
+      await clearStore("sync-data", "sync-data", "name");
+
       if (!!search && search !== "") {
         const data = {
           name: search,
@@ -77,11 +88,12 @@ const SearchForm = ({ handleOnSearchPokemon }: SearchFormProps) => {
           dispatch(
             setSnackBarAction({
               message: "Your Request is saved",
-              type: "info",
+              type: "success",
               open: true,
               yesLabel: "OK",
             })
           );
+          dispatch(setSearchAction(search));
         } else {
           getPokemon(search);
         }
@@ -89,7 +101,7 @@ const SearchForm = ({ handleOnSearchPokemon }: SearchFormProps) => {
     } catch (error) {
       return error;
     }
-  }, [search, getPokemon, sw, dispatch]);
+  }, [handleOnSearchPokemon, dispatch, search, sw, getPokemon]);
 
   return (
     <Row pt={3}>
